@@ -1,0 +1,35 @@
+# Environments
+venv/
+env/
+.env
+.venv/
+env.bak/
+venv.bak/
+
+# Python / Jupyter
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Datasets (Sangat Penting! Jangan upload CSV ratusan MB)
+Dataset/*
+!Dataset/README.md
+data/
+
+# Models & Preprocessors (Jangan upload model besar ke Git)
+models/*.keras
+models/*.h5
+models/*.pb
+models/saved_model/
+preprocessors/*.pkl
+
+# Logs & Outputs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp

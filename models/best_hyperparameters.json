@@ -1,0 +1,10 @@
+{
+  "attention_units": 192,
+  "conv_filters_1": 256,
+  "conv_filters_2": 128,
+  "dense_units_1": 128,
+  "dense_units_2": 256,
+  "dropout_rate": 0.2,
+  "learning_rate": 0.0005988959230738318,
+  "kernel_size": 3
+}

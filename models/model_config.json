@@ -1,0 +1,24 @@
+{
+  "vocab_size": 10000,
+  "max_seq_len": 300,
+  "embedding_dim": 128,
+  "attention_units": 128,
+  "has_pretrained_embedding": true,
+  "trainable_embedding": true,
+  "architecture": "Dual-Input CNN with Custom Attention",
+  "training_summary": {
+    "total_epochs": 9,
+    "final_loss": 7.608471719322552e-07,
+    "final_accuracy": 1.0,
+    "best_val_loss": 1.3280570287693867e-15,
+    "best_val_accuracy": 1.0
+  },
+  "evaluation_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "mae": 0.0,
+    "auc": 1.0
+  }
+}

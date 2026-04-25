@@ -1,0 +1,11 @@
+test_id,description,category,expected_min,expected_max,actual_score,passed,inference_time_ms,confidence,recommendation,error,test_timestamp
+TC001,High match - Data Scientist role,high_match,0.7,1.0,1.0,True,2353.386163711548,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC002,Low match - Fresh grad vs Senior role,low_match,0.0,0.3,1.0,False,47.6994514465332,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC003,Medium-low match - Frontend vs Backend,medium_low_match,0.2,0.5,1.0,False,49.94082450866699,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC004,High match - Full-Stack role,high_match,0.6,0.9,0.9015,False,54.402828216552734,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC005,Low match - Marketing vs Data Analyst,low_match,0.1,0.4,1.0,False,48.13241958618164,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC006,High match - ML Engineer role,high_match,0.7,1.0,0.974,True,50.07338523864746,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC007,Medium match - Junior vs Mid-level,medium_match,0.4,0.7,1.0,False,51.37014389038086,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC008,Medium-high match - DevOps vs SRE,medium_high_match,0.5,0.8,1.0,False,48.61164093017578,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC009,Very low match - Designer vs Developer,very_low_match,0.0,0.2,0.9977,False,45.645713806152344,High,Highly Recommended,,2026-04-22 14:36:26.681155
+TC010,Medium match - BA vs Data Scientist,medium_match,0.3,0.6,1.0,False,48.798322677612305,High,Highly Recommended,,2026-04-22 14:36:26.681155
