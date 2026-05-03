@@ -8,9 +8,9 @@
   "architecture": "Dual-Input CNN with Custom Attention",
   "training_summary": {
     "total_epochs": 9,
-    "final_loss": 7.608471719322552e-07,
+    "final_loss": 3.3211031222890597e-06,
     "final_accuracy": 1.0,
-    "best_val_loss": 1.3280570287693867e-15,
+    "best_val_loss": 3.3738614014383345e-16,
     "best_val_accuracy": 1.0
   },
   "evaluation_metrics": {

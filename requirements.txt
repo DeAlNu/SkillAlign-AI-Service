@@ -15,8 +15,6 @@ scikit-learn>=1.3.0
 # --- NLP Libraries ---
 nltk>=3.8.0
 gensim>=4.3.0
-sentence-transformers>=2.2.0
-spacy>=3.7.0
 
 # --- API Framework (Side Quest) ---
 fastapi>=0.104.0

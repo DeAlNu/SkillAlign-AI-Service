@@ -1,0 +1,32 @@
+{
+  "vocab_size": 15000,
+  "max_seq_len": 300,
+  "embedding_dim": 128,
+  "attention_units": 128,
+  "has_pretrained_embedding": true,
+  "trainable_embedding": true,
+  "architecture": "Dual-Input CNN with Custom Attention",
+  "version": "v3",
+  "fixes": [
+    "pair_synthesizer_with_5_modes",
+    "soft_continuous_labels",
+    "huber_regression_loss",
+    "cross_domain_negative_pairs",
+    "hard_negative_same_domain_diff_role",
+    "hard_negative_seniority_mismatch"
+  ],
+  "training_summary": {
+    "total_epochs": 32,
+    "final_loss": 0.0012312049511820078,
+    "final_mae": 0.037970270961523056,
+    "best_val_loss": 0.010482675395905972,
+    "best_val_mae": 0.14376449584960938
+  },
+  "evaluation_metrics": {
+    "mae": 0.14488813281059265,
+    "rmse": 0.21520515735131587,
+    "mse": 0.04631325975060463,
+    "pseudo_accuracy_at_0.5": 0.8114781448114782,
+    "pred_test_correlation": 0.5932691842083613
+  }
+}

@@ -332,8 +332,8 @@ def main():
     """Main function untuk menjalankan testing"""
     
     # Configuration - Gunakan path relatif dari root project
-    MODEL_PATH = '../models/skillalign_matcher_tuned.keras'
-    PREPROCESSOR_PATH = '../preprocessors/nlp_preprocessor.pkl'
+    MODEL_PATH = '../models/skillalign_matcher_v3.keras'
+    PREPROCESSOR_PATH = '../preprocessors/nlp_preprocessor_v3.pkl'
     TEST_CSV_PATH = 'test_data/inference_test_cases.csv'
     OUTPUT_CSV_PATH = 'results/inference_test_results.csv'
     

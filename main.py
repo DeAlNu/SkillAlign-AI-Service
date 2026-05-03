@@ -51,10 +51,10 @@ async def lifespan(app: FastAPI):
     global predictor
 
     model_path = os.getenv(
-        'MODEL_PATH', 'models/skillalign_matcher.keras'
+        'MODEL_PATH', 'models/skillalign_matcher_v2.keras'
     )
     preprocessor_path = os.getenv(
-        'PREPROCESSOR_PATH', 'preprocessors/nlp_preprocessor.pkl'
+        'PREPROCESSOR_PATH', 'preprocessors/nlp_preprocessor_v2.pkl'
     )
 
     # Coba load model (jika tersedia)
@@ -88,13 +88,15 @@ app = FastAPI(
     title="SkillAlign AI Service",
     description=(
         "API untuk CV-Job Matching menggunakan Deep Learning.\n\n"
-        "**Features:**\n"
-        "- Single prediction: CV vs Job Description\n"
-        "- Batch prediction: CV vs multiple jobs\n"
-        "- Health check endpoint\n\n"
+        "**Endpoints:**\n"
+        "- `POST /predict` — Single prediction (CV vs 1 Job)\n"
+        "- `POST /api/v1/predict` — Single prediction (versioned)\n"
+        "- `POST /api/v1/predict/batch` — Batch prediction (CV vs ≤50 Jobs)\n"
+        "- `GET /health` — Health check\n\n"
+        "**Model:** SkillAlign Matcher v2 (Dual-Input CNN + Custom Attention)\n"
         "**Tim:** CC26-PSU318"
     ),
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -150,10 +152,15 @@ async def root():
     """Root endpoint — API info."""
     return {
         "service": "SkillAlign AI Service",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running",
-        "docs": "/docs",
-        "health": "/health"
+        "model": "skillalign_matcher_v2",
+        "endpoints": {
+            "single": "/predict  atau  /api/v1/predict",
+            "batch": "/api/v1/predict/batch",
+            "docs": "/docs",
+            "health": "/health"
+        }
     }
 
 

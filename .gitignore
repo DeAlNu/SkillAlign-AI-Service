@@ -1,35 +1,25 @@
-# Environments
+# Virtual Environments
 venv/
+.venv/
 env/
 .env
-.venv/
-env.bak/
-venv.bak/
 
-# Python / Jupyter
+# Python Cache
 __pycache__/
-*.py[cod]
-*$py.class
+*/__pycache__/
+*/*/__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter Notebooks
 .ipynb_checkpoints/
-.pytest_cache/
 
-# Datasets (Sangat Penting! Jangan upload CSV ratusan MB)
-Dataset/*
-!Dataset/README.md
-data/
-
-# Models & Preprocessors (Jangan upload model besar ke Git)
-models/*.keras
-models/*.h5
-models/*.pb
-models/saved_model/
-preprocessors/*.pkl
-
-# Logs & Outputs
+# Logs & Data (Opsional)
 logs/
-*.log
+dataset/
+Dataset/
 
-# IDEs
-.vscode/
-.idea/
-*.swp
+# Jika Anda tidak ingin mem-push model keras yang ukurannya sangat besar (>100MB), hilangkan tanda pagar di bawah ini:
+# models/*.keras
+# preprocessors/*.pkl
+# preprocessors/*.npy
