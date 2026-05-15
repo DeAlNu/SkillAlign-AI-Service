@@ -16,6 +16,15 @@ scikit-learn>=1.3.0
 nltk>=3.8.0
 gensim>=4.3.0
 
+# --- Semantic Skill Extraction (Skill Gap Feature) ---
+keybert>=0.8.0
+sentence-transformers>=2.2.0
+
+# --- Skill Named Entity Recognition (Skill Gap v5) ---
+# Setelah install, jalankan: python -m spacy download en_core_web_lg
+spacy>=3.0.0
+skillNer>=0.2.3
+
 # --- API Framework (Side Quest) ---
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0

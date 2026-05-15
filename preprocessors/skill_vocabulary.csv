@@ -1,0 +1,821 @@
+skill,doc_frequency,doc_freq_pct
+following,467,0.19234
+requires,460,0.18946
+position requires,438,0.1804
+following skills,430,0.1771
+requires following,429,0.17669
+management,186,0.07661
+communication,181,0.07455
+people,128,0.05272
+written,123,0.05066
+service,120,0.04942
+office,119,0.04901
+care,116,0.04778
+customer,107,0.04407
+requirements,104,0.04283
+verbal,99,0.04077
+healthcare,92,0.03789
+community,91,0.03748
+people skills,88,0.03624
+development,88,0.03624
+environment,88,0.03624
+computer,88,0.03624
+time,84,0.0346
+able,82,0.03377
+physical,80,0.03295
+community outreach,78,0.03213
+outreach,78,0.03213
+data,78,0.03213
+written communication,78,0.03213
+microsoft,77,0.03171
+customer service,75,0.03089
+verbal written,75,0.03089
+vision,74,0.03048
+school,72,0.02965
+employee,71,0.02924
+services,70,0.02883
+communication skills,70,0.02883
+perform,68,0.02801
+contact,65,0.02677
+patient,63,0.02595
+hospice,63,0.02595
+medical,63,0.02595
+field,63,0.02595
+information,62,0.02554
+problem,62,0.02554
+hospice care,62,0.02554
+qualifications,61,0.02512
+benefits,61,0.02512
+needs,60,0.02471
+systems,59,0.0243
+excel,59,0.0243
+patient care,59,0.0243
+building,58,0.02389
+software,58,0.02389
+equivalent,57,0.02348
+fundraising,57,0.02348
+basic,57,0.02348
+sales,56,0.02306
+employment,56,0.02306
+essential,56,0.02306
+professional,56,0.02306
+planning,56,0.02306
+certification,56,0.02306
+diploma,56,0.02306
+writing,55,0.02265
+organizational,55,0.02265
+high school,55,0.02265
+healthcare hospice,54,0.02224
+duties,54,0.02224
+license,54,0.02224
+solving,54,0.02224
+school diploma,54,0.02224
+industry,54,0.02224
+problem solving,53,0.02183
+care patient,53,0.02183
+attention,53,0.02183
+coordination,53,0.02183
+elder,53,0.02183
+project,52,0.02142
+communicate,52,0.02142
+elder care,52,0.02142
+representative,51,0.021
+com,51,0.021
+tools,51,0.021
+marketing,51,0.021
+accounting,50,0.02059
+functions,50,0.02059
+microsoft office,50,0.02059
+multi,49,0.02018
+social,49,0.02018
+health,48,0.01977
+general,48,0.01977
+lift,48,0.01977
+physical requirements,48,0.01977
+word,47,0.01936
+procedures,47,0.01936
+life,47,0.01936
+reasonable,47,0.01936
+independently,47,0.01936
+volunteer,46,0.01895
+orientation,46,0.01895
+care healthcare,46,0.01895
+response,46,0.01895
+technical,46,0.01895
+program,46,0.01895
+csr volunteer,45,0.01853
+needed,45,0.01853
+csr,45,0.01853
+disaster,45,0.01853
+effectively,45,0.01853
+related field,45,0.01853
+public,45,0.01853
+employees,45,0.01853
+engineering,45,0.01853
+interpersonal,45,0.01853
+volunteer coordination,45,0.01853
+relationship,45,0.01853
+research,45,0.01853
+individuals,44,0.01812
+transportation,43,0.01771
+handling,43,0.01771
+networking,43,0.01771
+disaster response,42,0.0173
+relations,42,0.0173
+organizational skills,42,0.0173
+english,42,0.0173
+safety,42,0.0173
+relationship building,42,0.0173
+application,41,0.01689
+skills community,41,0.01689
+resources,41,0.01689
+manager,41,0.01689
+training,40,0.01647
+dental,40,0.01647
+sexual orientation,40,0.01647
+insurance,40,0.01647
+sexual,40,0.01647
+competitive,40,0.01647
+abilities,39,0.01606
+sql,39,0.01606
+demands,39,0.01606
+disabilities,39,0.01606
+identity,38,0.01565
+individuals disabilities,38,0.01565
+periods,38,0.01565
+plan,38,0.01565
+equipment,38,0.01565
+products,38,0.01565
+outreach csr,38,0.01565
+process,38,0.01565
+successfully,38,0.01565
+apply,38,0.01565
+analysis,37,0.01524
+gender identity,37,0.01524
+financial,37,0.01524
+regulations,37,0.01524
+security,37,0.01524
+media,37,0.01524
+applicants,36,0.01483
+relevant,36,0.01483
+communications,36,0.01483
+values,36,0.01483
+valid,36,0.01483
+perform essential,36,0.01483
+meet,35,0.01442
+local,35,0.01442
+change,35,0.01442
+skills elder,35,0.01442
+essential functions,35,0.01442
+success,35,0.01442
+therapy,35,0.01442
+fast,34,0.014
+tasks,34,0.014
+design,34,0.014
+travel,34,0.014
+public relations,34,0.014
+comprehensive,34,0.014
+administration,34,0.014
+description,33,0.01359
+paced,33,0.01359
+plans,33,0.01359
+project management,33,0.01359
+proficiency,33,0.01359
+enable,33,0.01359
+social media,33,0.01359
+401k,33,0.01359
+sex,33,0.01359
+java,33,0.01359
+leadership,32,0.01318
+solutions,32,0.01318
+individual,32,0.01318
+computer skills,32,0.01318
+multiple,32,0.01318
+accommodations,32,0.01318
+job description,32,0.01318
+qualified,32,0.01318
+physical demands,32,0.01318
+regularly,32,0.01318
+reasonable accommodations,32,0.01318
+advocacy,32,0.01318
+fast paced,32,0.01318
+state,32,0.01318
+customers,31,0.01277
+practices,31,0.01277
+animal,31,0.01277
+analytical,31,0.01277
+understand,31,0.01277
+driver,31,0.01277
+quality,31,0.01277
+career,31,0.01277
+pounds,31,0.01277
+dental vision,31,0.01277
+paid,31,0.01277
+maintain,31,0.01277
+specific,30,0.01236
+oriented,30,0.01236
+conditions,30,0.01236
+future,30,0.01236
+advanced,30,0.01236
+better,29,0.01194
+learn,29,0.01194
+skills customer,29,0.01194
+enable individuals,29,0.01194
+accommodations enable,29,0.01194
+home,29,0.01194
+instruction,29,0.01194
+read,29,0.01194
+college,29,0.01194
+record,29,0.01194
+assistance,29,0.01194
+teaching,29,0.01194
+effective,29,0.01194
+marketing communications,29,0.01194
+suite,28,0.01153
+operations,28,0.01153
+states,28,0.01153
+term,28,0.01153
+compensation,28,0.01153
+orientation gender,28,0.01153
+disabilities perform,28,0.01153
+driver license,28,0.01153
+ms,28,0.01153
+law,28,0.01153
+address,28,0.01153
+activities,28,0.01153
+critical,28,0.01153
+market,28,0.01153
+opportunities,28,0.01153
+technology,27,0.01112
+united,27,0.01112
+animal care,27,0.01112
+care handling,27,0.01112
+tasking,27,0.01112
+food,27,0.01112
+united states,27,0.01112
+problems,27,0.01112
+processes,27,0.01112
+communications mar,27,0.01112
+multi tasking,27,0.01112
+ged,27,0.01112
+group,27,0.01112
+excellent communication,27,0.01112
+eye,27,0.01112
+range,27,0.01112
+ll,27,0.01112
+mar,27,0.01112
+mar com,27,0.01112
+medical dental,27,0.01112
+manufacturing,27,0.01112
+seo,27,0.01112
+skills animal,27,0.01112
+administrative,26,0.01071
+follow,26,0.01071
+performing,26,0.01071
+federal,26,0.01071
+skills advocacy,26,0.01071
+animal therapy,26,0.01071
+designed,26,0.01071
+language,25,0.0103
+human,25,0.0103
+work independently,25,0.0103
+python,25,0.0103
+entry,25,0.0103
+mental,25,0.0103
+standing,25,0.0103
+schedule,25,0.0103
+control,25,0.0103
+providing,25,0.0103
+previous,24,0.00988
+mobile,24,0.00988
+coordination fundraising,24,0.00988
+prioritize,24,0.00988
+necessary,24,0.00988
+real,24,0.00988
+culture,24,0.00988
+interact,24,0.00988
+outlook,24,0.00988
+mechanical,24,0.00988
+functions job,24,0.00988
+exciting,24,0.00988
+stand,24,0.00988
+regard,24,0.00988
+issues,24,0.00988
+commitment,24,0.00988
+internet,24,0.00988
+task,24,0.00988
+science,24,0.00988
+hours,24,0.00988
+ability communicate,23,0.00947
+authorized,23,0.00947
+basic computer,23,0.00947
+authorized work,23,0.00947
+data entry,23,0.00947
+teaching instruction,23,0.00947
+committed,23,0.00947
+patients,23,0.00947
+operating,23,0.00947
+projects,23,0.00947
+lbs,23,0.00947
+core,23,0.00947
+right,23,0.00947
+handling animal,23,0.00947
+applications,23,0.00947
+diploma equivalent,23,0.00947
+drive,23,0.00947
+word excel,23,0.00947
+non,22,0.00906
+possess,22,0.00906
+interactive social,22,0.00906
+salary,22,0.00906
+skills accounting,22,0.00906
+interactive,22,0.00906
+clients,22,0.00906
+order,22,0.00906
+offer,22,0.00906
+oracle,22,0.00906
+oral,22,0.00906
+hr,22,0.00906
+organization people,22,0.00906
+global,22,0.00906
+business development,22,0.00906
+available,22,0.00906
+delivery,22,0.00906
+areas,22,0.00906
+programs,22,0.00906
+inventory,22,0.00906
+low,22,0.00906
+additional,22,0.00906
+met,22,0.00906
+self,22,0.00906
+media seo,22,0.00906
+growth,22,0.00906
+results,21,0.00865
+rewarding,21,0.00865
+lives,21,0.00865
+times,21,0.00865
+product,21,0.00865
+tomorrow,21,0.00865
+office suite,21,0.00865
+combination,21,0.00865
+administrative support,21,0.00865
+work environment,21,0.00865
+thinking,21,0.00865
+handle,21,0.00865
+days,21,0.00865
+demonstrated,21,0.00865
+driving,21,0.00865
+push,21,0.00865
+receive,21,0.00865
+lift 50,21,0.00865
+long,21,0.00865
+hands,21,0.00865
+principles,21,0.00865
+complete,21,0.00865
+described,20,0.00824
+www,20,0.00824
+candidates,20,0.00824
+standards,20,0.00824
+sponsorship,20,0.00824
+package,20,0.00824
+potential,20,0.00824
+preferably,20,0.00824
+improve,20,0.00824
+sit,20,0.00824
+short,20,0.00824
+internal,20,0.00824
+identify,20,0.00824
+write,20,0.00824
+aws,20,0.00824
+desk,20,0.00824
+strong organizational,20,0.00824
+advocacy community,20,0.00824
+thrive,20,0.00824
+reach,20,0.00824
+characteristic,20,0.00824
+test,20,0.00824
+marital,20,0.00824
+reports,20,0.00824
+history,20,0.00824
+holidays,20,0.00824
+staff,20,0.00824
+pay,20,0.00824
+flexible,20,0.00824
+diversity,20,0.00824
+event,20,0.00824
+strategy,19,0.00783
+perks,19,0.00783
+performance,19,0.00783
+access,19,0.00783
+accounts,19,0.00783
+accommodation,19,0.00783
+successfully perform,19,0.00783
+able lift,19,0.00783
+eye exams,19,0.00783
+clean,19,0.00783
+collaborate,19,0.00783
+cloud,19,0.00783
+eyewear,19,0.00783
+includes,19,0.00783
+sitting,19,0.00783
+familiarity,19,0.00783
+skills disaster,19,0.00783
+optometry contact,19,0.00783
+parts,19,0.00783
+ocular disease,19,0.00783
+ocular,19,0.00783
+optometry,19,0.00783
+current,19,0.00783
+focus,19,0.00783
+center,19,0.00783
+require,19,0.00783
+representative met,19,0.00783
+join,19,0.00783
+job reasonable,19,0.00783
+learning,19,0.00783
+lenses,19,0.00783
+lenses glaucoma,19,0.00783
+roles,19,0.00783
+employee regularly,19,0.00783
+estate,19,0.00783
+exams,19,0.00783
+cataract low,19,0.00783
+lobbying public,19,0.00783
+lobbying,19,0.00783
+employee successfully,19,0.00783
+job employee,19,0.00783
+reading,19,0.00783
+real estate,19,0.00783
+met employee,19,0.00783
+contact lenses,19,0.00783
+diabetes eyewear,19,0.00783
+diabetes,19,0.00783
+network,19,0.00783
+duties job,19,0.00783
+disease eye,19,0.00783
+disease,19,0.00783
+regularly required,19,0.00783
+mentoring,19,0.00783
+math,19,0.00783
+low vision,19,0.00783
+agile,19,0.00783
+vision diabetes,19,0.00783
+performing duties,19,0.00783
+testing,19,0.00783
+demands described,19,0.00783
+day,19,0.00783
+database,19,0.00783
+assigned,19,0.00783
+basis,19,0.00783
+base,19,0.00783
+written verbal,19,0.00783
+glaucoma ocular,19,0.00783
+glaucoma,19,0.00783
+fundraising lobbying,19,0.00783
+exams cataract,19,0.00783
+cataract,19,0.00783
+standard,19,0.00783
+brand,19,0.00783
+highly,18,0.00741
+depth,18,0.00741
+periods time,18,0.00741
+human resources,18,0.00741
+finance,18,0.00741
+annual,18,0.00741
+duties responsibilities,18,0.00741
+qualified applicants,18,0.00741
+relationships,18,0.00741
+regard race,18,0.00741
+location,18,0.00741
+construction,18,0.00741
+production,18,0.00741
+provides,18,0.00741
+ll need,18,0.00741
+complex,18,0.00741
+condition,18,0.00741
+diverse,18,0.00741
+electronic,18,0.00741
+certifications,18,0.00741
+check,18,0.00741
+expression,18,0.00741
+laws,18,0.00741
+paid time,18,0.00741
+positive,18,0.00741
+state local,18,0.00741
+place,18,0.00741
+engineer,18,0.00741
+skills administrative,18,0.00741
+sap,18,0.00741
+succeed,17,0.007
+general education,17,0.007
+cost,17,0.007
+ms office,17,0.007
+marital status,17,0.007
+erp,17,0.007
+equal employment,17,0.007
+lifting,17,0.007
+prior,17,0.007
+diploma ged,17,0.007
+military,17,0.007
+compliance,17,0.007
+considered,17,0.007
+eeo,17,0.007
+managing,17,0.007
+america,17,0.007
+architecture,17,0.007
+bachelors,17,0.007
+records,17,0.007
+respect,17,0.007
+repair,17,0.007
+incentive,17,0.007
+short term,17,0.007
+listed,17,0.007
+child,17,0.007
+integrity,17,0.007
+seo marketing,17,0.007
+members,17,0.007
+legal,17,0.007
+extended,17,0.007
+federal state,17,0.007
+paced environment,17,0.007
+outside,17,0.007
+phone,17,0.007
+50 pounds,17,0.007
+various,17,0.007
+years relevant,17,0.007
+vehicles,16,0.00659
+teamwork,16,0.00659
+strategic,16,0.00659
+universal,16,0.00659
+50 lbs,16,0.00659
+participate,16,0.00659
+value,16,0.00659
+share,16,0.00659
+track,16,0.00659
+accredited,16,0.00659
+ada,16,0.00659
+visit,16,0.00659
+arts,16,0.00659
+want,16,0.00659
+care shelters,16,0.00659
+attitude,16,0.00659
+variety,16,0.00659
+power,16,0.00659
+skilled,16,0.00659
+skills people,16,0.00659
+drug,16,0.00659
+duty,16,0.00659
+policies,16,0.00659
+critical thinking,16,0.00659
+disaster relief,16,0.00659
+pregnancy,16,0.00659
+demonstrate,16,0.00659
+cover,16,0.00659
+coverage,16,0.00659
+inclusive,16,0.00659
+meaningful,16,0.00659
+form,16,0.00659
+external,16,0.00659
+eligible,16,0.00659
+multi task,16,0.00659
+let,16,0.00659
+limits,16,0.00659
+email,16,0.00659
+challenge,16,0.00659
+provided,16,0.00659
+relief care,16,0.00659
+relief,16,0.00659
+worldwide,16,0.00659
+accelerate,16,0.00659
+workers,16,0.00659
+shelters,16,0.00659
+teams,15,0.00618
+team let,15,0.00618
+universal healthcare,15,0.00618
+better yesterday,15,0.00618
+succeed right,15,0.00618
+valid driver,15,0.00618
+yesterday makes,15,0.00618
+tomorrow better,15,0.00618
+perform job,15,0.00618
+needs improve,15,0.00618
+push limits,15,0.00618
+minimum requirements,15,0.00618
+cross,15,0.00618
+distribution,15,0.00618
+skills relationship,15,0.00618
+skills transportation,15,0.00618
+point,15,0.00618
+percentages,15,0.00618
+note,15,0.00618
+pain,15,0.00618
+people team,15,0.00618
+patients lives,15,0.00618
+therapy elder,15,0.00618
+pain restore,15,0.00618
+pass,15,0.00618
+shape,15,0.00618
+shape future,15,0.00618
+yesterday,15,0.00618
+relevant experience,15,0.00618
+medtronic,15,0.00618
+meaningful innovations,15,0.00618
+extend life,15,0.00618
+improve patients,15,0.00618
+job requirements,15,0.00618
+job successfully,15,0.00618
+change healthcare,15,0.00618
+innovations succeed,15,0.00618
+hiring,15,0.00618
+innovations,15,0.00618
+contributions,15,0.00618
+create meaningful,15,0.00618
+services help,15,0.00618
+setting,15,0.00618
+extend,15,0.00618
+cbre,15,0.00618
+life challenge,15,0.00618
+let work,15,0.00618
+lives help,15,0.00618
+close,15,0.00618
+employee required,15,0.00618
+restore health,15,0.00618
+reporting,15,0.00618
+medtronic change,15,0.00618
+medtronic push,15,0.00618
+competitive compensation,15,0.00618
+requirements listed,15,0.00618
+events,15,0.00618
+rewarding place,15,0.00618
+right people,15,0.00618
+restore,15,0.00618
+safe,15,0.00618
+combination education,15,0.00618
+makes exciting,15,0.00618
+makes,15,0.00618
+make tomorrow,15,0.00618
+listed representative,15,0.00618
+limits technology,15,0.00618
+limited,15,0.00618
+challenge make,15,0.00618
+satisfactorily,15,0.00618
+alleviate,15,0.00618
+advance ability,15,0.00618
+walking,15,0.00618
+alleviate pain,15,0.00618
+advance,15,0.00618
+address universal,15,0.00618
+appropriate,15,0.00618
+adult,15,0.00618
+work address,15,0.00618
+techniques,15,0.00618
+situations,15,0.00618
+genetic,15,0.00618
+shelters disaster,15,0.00618
+work united,15,0.00618
+exciting rewarding,15,0.00618
+help shape,15,0.00618
+worldwide medtronic,15,0.00618
+accelerate advance,15,0.00618
+health extend,15,0.00618
+healthcare needs,15,0.00618
+healthcare worldwide,15,0.00618
+help alleviate,15,0.00618
+account,14,0.00577
+generous,14,0.00577
+genetic information,14,0.00577
+spanish,14,0.00577
+speak,14,0.00577
+technology therapies,14,0.00577
+therapies,14,0.00577
+want accelerate,14,0.00577
+area,14,0.00577
+analyst,14,0.00577
+base salary,14,0.00577
+analytics,14,0.00577
+literacy,14,0.00577
+screen,14,0.00577
+salesforce,14,0.00577
+maintenance,14,0.00577
+required reasonable,14,0.00577
+management skills,14,0.00577
+remote,14,0.00577
+meet needs,14,0.00577
+accuracy,14,0.00577
+wide range,14,0.00577
+wide,14,0.00577
+interpret,14,0.00577
+interpersonal skills,14,0.00577
+job duties,14,0.00577
+extended periods,14,0.00577
+set,14,0.00577
+deadlines,14,0.00577
+motivated,14,0.00577
+credit,14,0.00577
+digital,14,0.00577
+processing,14,0.00577
+place want,14,0.00577
+peers,14,0.00577
+tutoring,14,0.00577
+admin,14,0.00577
+successfully individual,14,0.00577
+time management,14,0.00577
+physical job,14,0.00577
+therapies services,14,0.00577
+persons,14,0.00577
+details,14,0.00577
+experience training,14,0.00577
+inquiries,14,0.00577
+instructions,14,0.00577
+internet research,14,0.00577
+noise,14,0.00577
+core values,14,0.00577
+nice,14,0.00577
+industry preferred,13,0.00535
+visual,13,0.00535
+assist,13,0.00535
+analytical problem,13,0.00535
+special,13,0.00535
+accordance,13,0.00535
+solving skills,13,0.00535
+graphic,13,0.00535
+benefit,13,0.00535
+media blogging,13,0.00535
+match,13,0.00535
+management experience,13,0.00535
+making,13,0.00535
+developing,13,0.00535
+required independently,13,0.00535
+requirements physical,13,0.00535
+messaging,13,0.00535
+programming,13,0.00535
+certified,13,0.00535
+prolonged,13,0.00535
+required interact,13,0.00535
+citizenship,13,0.00535
+employment opportunity,13,0.00535
+engineering related,13,0.00535
+equivalent combination,13,0.00535
+warehouse,13,0.00535
+savings,13,0.00535
+achieve,13,0.00535
+communicate peers,13,0.00535
+section,13,0.00535
+excellent interpersonal,13,0.00535
+future physical,13,0.00535
+stage,13,0.00535
+carrying,13,0.00535
+career life,13,0.00535
+card,13,0.00535
+section job,13,0.00535
+characteristics,13,0.00535
+interact computer,13,0.00535
+characteristic protected,13,0.00535
+machine,13,0.00535
+priorities,13,0.00535
+driving record,13,0.00535
+development messaging,13,0.00535
+concepts,13,0.00535
+description representative,13,0.00535
+dependent,13,0.00535
+reasonable accommodation,13,0.00535
+recognize,13,0.00535
+efficient,13,0.00535
+jira,13,0.00535
+independently mobile,13,0.00535
+physical mental,13,0.00535
+program management,13,0.00535
+pre,13,0.00535
+currently,13,0.00535
+peers workers,13,0.00535
+able work,13,0.00535
+personal,13,0.00535
+desired,13,0.00535
+sex sexual,13,0.00535
+ability read,13,0.00535
+youth,13,0.00535
+understand work,13,0.00535
+ability lift,13,0.00535
+strong attention,13,0.00535
+superior,13,0.00535
+bonus,13,0.00535
+blogging,13,0.00535
+brand development,13,0.00535
+vary,13,0.00535
+youth services,13,0.00535
+visa,13,0.00535
+art/creative,0,0.0
+advertising,0,0.0
+product management,0,0.0
+education,0,0.0
+consulting,0,0.0
+purchasing,0,0.0
+supply chain,0,0.0
+health care provider,0,0.0
+general business,0,0.0
+strategy/planning,0,0.0
+other,0,0.0
+quality assurance,0,0.0
+information technology,0,0.0
+writing/editing,0,0.0
+accounting/auditing,0,0.0
