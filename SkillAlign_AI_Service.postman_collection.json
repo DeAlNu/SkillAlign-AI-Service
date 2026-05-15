@@ -1,0 +1,348 @@
+{
+  "info": {
+    "name": "SkillAlign AI Service",
+    "description": "CV-Job Matching & Learning Path API\n\nCC26-PSU318 — Capstone Project\n\n## Alur penggunaan:\n1. `GET /health` — cek server\n2. `POST /analyze-cv` — analisis CV, dapat saran job title\n3. `POST /recommend` — ranking job postings + industry skill gaps\n4. `POST /learning-path/analyze` — cari kursus per skill\n5. `GET /learning-path/courses/{skill}` — lihat cache kursus\n6. `POST /learning-path/refresh` — reset & re-fetch cache",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Info service & daftar endpoint"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Cek status server dan apakah model DL sudah loaded"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prediction",
+      "item": [
+        {
+          "name": "Single Predict (root)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/predict",
+              "host": ["{{base_url}}"],
+              "path": ["predict"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Experienced Senior Software Engineer with 6+ years of expertise in building scalable web applications using Python, Django, and React.js. Proven track record in designing RESTful APIs, optimizing PostgreSQL databases, and implementing CI/CD pipelines with Docker and Kubernetes. Strong background in cloud infrastructure on AWS (EC2, S3, Lambda). Skilled in agile methodologies, cross-functional team collaboration, and mentoring junior developers.\",\n  \"job_description\": \"Senior Backend Engineer: We are looking for an experienced Python developer to build high-performance microservices. Requirements include 5+ years of experience with Django or FastAPI, strong knowledge of SQL databases, and experience with AWS cloud services. You will be responsible for API design, system architecture, and ensuring scalability.\",\n  \"user_id\": \"user_001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Predict matching score CV vs 1 Job Description"
+          }
+        },
+        {
+          "name": "Single Predict (versioned)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Experienced Senior Software Engineer with 6+ years of expertise in building scalable web applications using Python, Django, and React.js. Proven track record in designing RESTful APIs, optimizing PostgreSQL databases, and implementing CI/CD pipelines with Docker and Kubernetes. Strong background in cloud infrastructure on AWS (EC2, S3, Lambda). Skilled in agile methodologies, cross-functional team collaboration, and mentoring junior developers.\",\n  \"job_description\": \"Senior Backend Engineer: We are looking for an experienced Python developer to build high-performance microservices. Requirements include 5+ years of experience with Django or FastAPI, strong knowledge of SQL databases, and experience with AWS cloud services.\",\n  \"user_id\": \"user_001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Sama dengan /predict tapi versioned path /api/v1/predict"
+          }
+        },
+        {
+          "name": "Batch Predict",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict/batch",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict", "batch"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Senior Project Manager with 8+ years of experience leading cross-functional teams in diverse sectors including IT, Healthcare, Construction, and Manufacturing. PMP certified professional with a strong track record in budget management, risk mitigation, and agile methodologies. Skilled in stakeholder communication, process improvement, and delivering complex projects on time.\",\n  \"job_descriptions\": [\n    \"IT Project Manager: Lead the delivery of IT consulting projects for enterprise clients. Must be familiar with SDLC, cloud migration strategies, and managing technical teams.\",\n    \"Scrum Master: Facilitate agile ceremonies and remove impediments for the development team. Must have a deep understanding of Scrum framework and Jira administration.\",\n    \"Management Consultant: Advise clients on strategic business initiatives and operational improvements. Requires strong analytical skills and ability to present findings to C-level executives.\",\n    \"Hospital Operations Manager: Oversee daily administrative and clinical operations of the facility. Requires knowledge of healthcare regulations, staff scheduling, and budget management.\",\n    \"Financial Analyst: Analyze financial data and market trends to provide investment recommendations. Strong proficiency in Excel and financial modeling is required.\"\n  ],\n  \"user_id\": \"candidate_pm_001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "CV vs multiple job descriptions — diranking dari skor tertinggi. Max 50 job descriptions."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Skill Analysis",
+      "item": [
+        {
+          "name": "Extract CV Skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/extract-cv-skills",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "extract-cv-skills"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Software Engineer with 5 years experience in Python, Django, React.js, PostgreSQL, Docker, and AWS cloud infrastructure. Strong background in CI/CD pipelines and microservices architecture. Experienced with Kubernetes, Terraform, and GitHub Actions.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Ekstrak daftar skill dari CV menggunakan SkillNer (EMSI ~6000+ skills database). Output berguna untuk candidate generation sebelum batch prediction."
+          }
+        },
+        {
+          "name": "Skill Gap Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/skill-gap",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "skill-gap"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Experienced Senior Software Engineer with 6+ years of expertise in building scalable web applications using Python, Django, and React.js. Proven track record in designing RESTful APIs, optimizing PostgreSQL databases, and implementing CI/CD pipelines with Docker and Kubernetes. Strong background in cloud infrastructure on AWS (EC2, S3, Lambda).\",\n  \"job_description\": \"Senior Backend Engineer: We are looking for an experienced Python developer to build high-performance microservices. Requirements include 5+ years of experience with Django or FastAPI, strong knowledge of SQL databases, experience with AWS cloud services, Kubernetes orchestration, and GraphQL API design.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Analisis gap antara skill CV dan requirement job. Mengembalikan present_skills, missing_skills (berurutan prioritas), dan skill_gap_score."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recommendation Flow",
+      "description": "Alur 2 tahap: analyze-cv → recommend\n\n1. POST /analyze-cv → dapat suggested_job_titles\n2. User pilih 1 job title\n3. POST /recommend → dapat ranking job + industry_skill_analysis.priority_gaps",
+      "item": [
+        {
+          "name": "Step 1 — Analyze CV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analyze-cv",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "analyze-cv"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Frontend Developer with 4 years of experience. B.S. Computer Science, Universitas Indonesia. Skills: React.js, TypeScript, Node.js, PostgreSQL, Docker, Git, REST API design, responsive UI with Tailwind CSS. Experience building single-page applications and component libraries.\",\n  \"top_n_titles\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Tahap 1 — Analisis CV: ekstrak profil (jabatan, pengalaman, pendidikan) + saran job title yang paling sesuai.\n\nOutput: suggested_job_titles → pilih salah satu untuk dikirim ke /recommend"
+          }
+        },
+        {
+          "name": "Step 2 — Recommend Jobs",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/recommend",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Frontend Developer with 4 years of experience. B.S. Computer Science, Universitas Indonesia. Skills: React.js, TypeScript, Node.js, PostgreSQL, Docker, Git, REST API design, responsive UI with Tailwind CSS.\",\n  \"job_title\": \"Frontend Engineer\",\n  \"job_postings\": [\n    {\n      \"job_id\": \"job_001\",\n      \"job_title\": \"Frontend Engineer at Gojek\",\n      \"job_description\": \"We are looking for a skilled Frontend Engineer to build scalable web applications. Requirements: 3+ years React.js experience, TypeScript, strong CSS skills, REST API integration, Git version control. Experience with Next.js and testing frameworks is a plus.\"\n    },\n    {\n      \"job_id\": \"job_002\",\n      \"job_title\": \"Full Stack Developer at Tokopedia\",\n      \"job_description\": \"Full Stack Developer needed for our marketplace platform. Required skills: React.js or Vue.js, Node.js, PostgreSQL, Docker, Kubernetes, and AWS. 3+ years experience in web development. Agile team environment.\"\n    },\n    {\n      \"job_id\": \"job_003\",\n      \"job_title\": \"UI Engineer at Traveloka\",\n      \"job_description\": \"UI Engineer to design and implement pixel-perfect interfaces. Must have strong HTML/CSS, React.js, TypeScript, and cross-browser compatibility knowledge. Experience with design systems and accessibility standards required.\"\n    },\n    {\n      \"job_id\": \"job_004\",\n      \"job_title\": \"Backend Engineer at Shopee\",\n      \"job_description\": \"Backend Engineer to build high-performance microservices. Required: Python or Go, PostgreSQL, Redis, Kafka, Docker, Kubernetes. 4+ years experience. Strong system design skills.\"\n    },\n    {\n      \"job_id\": \"job_005\",\n      \"job_title\": \"React Developer at Bukalapak\",\n      \"job_description\": \"React Developer for our e-commerce frontend. Skills needed: React.js, Redux, TypeScript, REST APIs, Git. Experience with performance optimization and A/B testing preferred. 2+ years experience.\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Tahap 2 — Ranking job postings berdasarkan CV + job title.\n\nOutput penting:\n- results[]: job diurutkan dari skor tertinggi\n- industry_skill_analysis.priority_gaps: gunakan ini sebagai input ke /learning-path/analyze"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Learning Path",
+      "description": "Alur Learning Path:\n1. Ambil priority_gaps dari response /recommend\n2. POST /analyze → dapat kursus per skill (Coursera, Dicoding, YouTube)\n3. GET /courses/{skill} → lihat cache kursus\n4. POST /refresh → reset cache + re-fetch",
+      "item": [
+        {
+          "name": "Analyze — Generate Learning Path",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "analyze"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_job_title\": \"Frontend Engineer\",\n  \"priority_gaps\": [\n    {\n      \"skill\": \"TypeScript\",\n      \"frequency\": 0.8,\n      \"tier\": \"core\"\n    },\n    {\n      \"skill\": \"Docker\",\n      \"frequency\": 0.5,\n      \"tier\": \"common\"\n    },\n    {\n      \"skill\": \"Kubernetes\",\n      \"frequency\": 0.35,\n      \"tier\": \"common\"\n    }\n  ],\n  \"user_id\": \"user_frontend_001\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Cari kursus untuk setiap skill di priority_gaps.\n\nSumber kursus:\n- Coursera & Dicoding → Gemini 2.5 Flash (knowledge base)\n- YouTube → YouTube Data API v3 + Gemini re-ranking\n\nSkill yang sudah di-cache (< 30 hari) dikembalikan langsung tanpa memanggil API eksternal.\n\nInput priority_gaps berasal dari:\n  response /recommend → industry_skill_analysis → priority_gaps"
+          }
+        },
+        {
+          "name": "Get Cached Courses — TypeScript",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/courses/TypeScript",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "courses", "TypeScript"]
+            },
+            "description": "Ambil courses yang sudah di-cache untuk skill TypeScript.\n404 jika belum pernah di-analyze."
+          }
+        },
+        {
+          "name": "Get Cached Courses — Docker",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/courses/Docker",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "courses", "Docker"]
+            },
+            "description": "Ambil courses yang sudah di-cache untuk skill Docker.\n404 jika belum pernah di-analyze."
+          }
+        },
+        {
+          "name": "Refresh — Reset Cache & Re-fetch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "refresh"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_job_title\": \"Frontend Engineer\",\n  \"priority_gaps\": [\n    {\n      \"skill\": \"TypeScript\",\n      \"frequency\": 0.8,\n      \"tier\": \"core\"\n    },\n    {\n      \"skill\": \"Docker\",\n      \"frequency\": 0.5,\n      \"tier\": \"common\"\n    }\n  ],\n  \"skills\": [\"TypeScript\", \"Docker\"],\n  \"platforms\": [\"coursera\", \"dicoding\", \"youtube\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Hapus cache skill yang dipilih lalu fetch ulang di background.\n\nResponse dikembalikan langsung — proses fetch berjalan di belakang layar.\n\nField platforms (opsional): kosongkan / null untuk reset semua platform.\nContoh reset satu platform saja: \"platforms\": [\"coursera\"]"
+          }
+        },
+        {
+          "name": "Refresh — Coursera Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "refresh"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_job_title\": \"Frontend Engineer\",\n  \"priority_gaps\": [\n    {\n      \"skill\": \"TypeScript\",\n      \"frequency\": 0.8,\n      \"tier\": \"core\"\n    }\n  ],\n  \"skills\": [\"TypeScript\"],\n  \"platforms\": [\"coursera\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Refresh cache hanya untuk platform Coursera saja (Dicoding & YouTube tidak tersentuh)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases & Validasi",
+      "item": [
+        {
+          "name": "Predict — CV terlalu pendek (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cv_text\": \"Short CV\",\n  \"job_description\": \"Short job\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Harusnya 422 Unprocessable Entity — cv_text min_length=50, job_description min_length=30"
+          }
+        },
+        {
+          "name": "Learning Path — priority_gaps kosong (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "analyze"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_job_title\": \"Frontend Engineer\",\n  \"priority_gaps\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Harusnya 422 — priority_gaps min_length=1"
+          }
+        },
+        {
+          "name": "Get Courses — Skill tidak ada (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning-path/courses/SkillYangTidakAda",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning-path", "courses", "SkillYangTidakAda"]
+            },
+            "description": "Harusnya 404 — skill belum pernah di-analyze"
+          }
+        }
+      ]
+    }
+  ]
+}

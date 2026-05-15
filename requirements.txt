@@ -47,3 +47,9 @@ httpx>=0.25.0
 # --- Utilities ---
 tqdm>=4.66.0
 python-multipart>=0.0.6
+
+# --- Learning Path Feature (REST only — no google-generativeai SDK, avoids protobuf conflict with TF) ---
+google-api-python-client>=2.100.0
+supabase>=2.0.0
+python-dotenv>=1.0.0
+aiohttp>=3.9.0

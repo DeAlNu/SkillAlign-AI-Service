@@ -9,10 +9,15 @@ Usage:
 """
 
 import os
+import time
 import logging
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
 
-from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
+load_dotenv()  # Baca .env sebelum apapun
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -23,14 +28,34 @@ from src.inference.api_service import (
     router as api_router,
     set_predictor
 )
+from src.inference.learning_path_router import router as lp_router
 
 # ==========================================
 # Logging Configuration
 # ==========================================
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+
+def setup_logging() -> None:
+    os.makedirs("logs", exist_ok=True)
+    fmt = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
+
+    file_handler = RotatingFileHandler(
+        "logs/skillaign.log", maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+    )
+    file_handler.setFormatter(fmt)
+    file_handler.setLevel(logging.DEBUG)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(fmt)
+    console_handler.setLevel(logging.INFO)
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.handlers.clear()
+    root.addHandler(file_handler)
+    root.addHandler(console_handler)
+
+
+setup_logging()
 logger = logging.getLogger(__name__)
 
 # ==========================================
@@ -116,9 +141,25 @@ app.add_middleware(
 
 
 # ==========================================
+# Request Timing Middleware
+# ==========================================
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    elapsed_ms = round((time.time() - start) * 1000, 2)
+    logger.info(
+        f"{request.method} {request.url.path} → {response.status_code} ({elapsed_ms}ms)"
+    )
+    return response
+
+
+# ==========================================
 # Include API Router
 # ==========================================
 app.include_router(api_router)
+app.include_router(lp_router)
 
 
 # ==========================================
