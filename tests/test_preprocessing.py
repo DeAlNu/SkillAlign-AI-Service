@@ -163,8 +163,8 @@ class TestFeatureEngineer:
 
         assert result['overlap_count'] == 2
         assert result['overlap_ratio'] == 0.5  # 2/4
-        assert 'Docker' in result['missing_skills']
-        assert 'AWS' in result['missing_skills']
+        assert 'docker' in result['missing_skills']
+        assert 'aws' in result['missing_skills']
 
     def test_compute_skill_overlap_empty(self):
         """Test skill overlap dengan set kosong."""
