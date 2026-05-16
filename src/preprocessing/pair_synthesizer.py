@@ -197,10 +197,11 @@ class PairSynthConfig:
     partial_skill_ratio_min: float = 0.30
     partial_skill_ratio_max: float = 0.50
 
-    # Multiplicative penalties — DISABLED di v3 (set ke 1.0 = no-op)
-    # Bisa di-tweak nanti untuk eksperimen
-    cross_domain_multiplier: float = 1.0
-    severe_seniority_gap_multiplier: float = 1.0
+    # Multiplicative penalties — AKTIF di v4
+    # cross_domain: skor dikalikan 0.65 jika CV dari industri berbeda
+    # severe_seniority_gap: dikalikan 0.60 jika gap seniority ≥ 3 level
+    cross_domain_multiplier: float = 0.65
+    severe_seniority_gap_multiplier: float = 0.60
 
 
 # =============================================================================
@@ -469,8 +470,15 @@ class CVJobPairSynthesizer:
         sen_diff = abs(cv_seniority - job_seniority)
         seniority = {0: 1.0, 1: 0.7, 2: 0.4}.get(sen_diff, 0.1)
 
-        # 3. Domain match
-        domain = 1.0 if cv_industry == job_industry else 0.2
+        # 3. Domain match — lebih nuanced dari sebelumnya (v3: binary 1.0/0.2)
+        # v4: mempertimbangkan role juga supaya Designer vs Frontend tidak dapat domain=1.0
+        if cv_industry == job_industry:
+            if cv_role == job_role:
+                domain = 1.0   # industri sama, role sama → fully relevant
+            else:
+                domain = 0.5   # industri sama, role beda → partial credit
+        else:
+            domain = 0.1       # industri beda → penalti lebih keras (v3 = 0.2)
 
         # 4. Role match: 1.0 jika sama, 0.5 jika kategori sama, 0.1 jika beda
         if cv_role == job_role:
