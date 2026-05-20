@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+# 180s: cukup waktu untuk load TF model v4 + spaCy en_core_web_lg di cold start
+healthcheckTimeout = 180
+restartPolicyType = "on_failure"

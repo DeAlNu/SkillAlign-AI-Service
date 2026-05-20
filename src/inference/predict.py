@@ -1,16 +1,16 @@
 """
-Inference Module untuk SkillAlign AI (v2 — dengan Hybrid Scoring).
+Inference Module untuk SkillAlign AI (v4 — Multi-Scale CNN + Regression).
 
-Menyediakan fungsi dan class untuk melakukan prediksi
-matching score antara CV dan Job Description.
-
-Perubahan dari versi sebelumnya:
-- Tambah integrasi HybridScorer (default ON)
-- Final score = alpha*model_score + (1-alpha)*structured_score
-- Backward compatible: kalau use_hybrid=False, behavior sama seperti sebelumnya
+Perubahan dari v2:
+- Model v4: SkillAlignMatcherV4 (attention_units=192, conv_filters=(256,64))
+- Loss: Huber (regression) — bukan binary cross-entropy/focal_loss
+- OPTIMAL_THRESHOLD: dikalibrasi dari val set (default 0.44), bukan hardcode 0.5
+- auto-load threshold dari model_config_v4.json jika tersedia
+- Hybrid Scoring tetap tersedia (default ON, bisa di-override env USE_HYBRID=false)
 """
 
 import os
+import json
 import time
 import logging
 from typing import Optional, List, Tuple
@@ -21,7 +21,6 @@ import tensorflow as tf
 import joblib
 
 from src.models.custom_layers import CustomAttentionLayer
-from src.models.custom_loss import focal_loss
 from src.inference.hybrid_scorer import HybridScorer, HybridScorerConfig
 
 logger = logging.getLogger(__name__)
@@ -52,13 +51,18 @@ class PredictionResult:
 
 class SkillAlignPredictor:
     """
-    Predictor untuk SkillAlign model dengan optional Hybrid Scoring.
+    Predictor untuk SkillAlign model v4 dengan optional Hybrid Scoring.
 
     Args:
-        model_path: Path ke saved model (.keras atau SavedModel).
+        model_path: Path ke saved model (.keras).
         preprocessor_path: Path ke saved preprocessor (.pkl).
+        config_path: Path ke model_config_v4.json (auto-read OPTIMAL_THRESHOLD).
+        optimal_threshold: Threshold klasifikasi MATCH/NO MATCH.
+            - Dibaca dari config_path jika tersedia.
+            - Override via env var OPTIMAL_THRESHOLD.
+            - Default 0.44 (dikalibrasi Fase 3B dari val set).
         use_hybrid: Aktifkan hybrid scoring (default True).
-        hybrid_config: Custom HybridScorerConfig (default uses defaults).
+        hybrid_config: Custom HybridScorerConfig.
 
     Example:
         >>> predictor = SkillAlignPredictor()
@@ -67,20 +71,26 @@ class SkillAlignPredictor:
         ...     cv_text="3 years Python, Machine Learning...",
         ...     job_description="Looking for Data Scientist..."
         ... )
-        >>> print(result.matching_score)        # final hybrid score
-        >>> print(result.raw_model_score)       # raw neural model output
+        >>> print(result.matching_score)        # final score (hybrid jika ON)
+        >>> print(result.raw_model_score)       # raw v4 model output
         >>> print(result.structured_score)      # structured features score
     """
 
+    # Threshold dari Fase 3B threshold calibration
+    DEFAULT_OPTIMAL_THRESHOLD = 0.44
+
     def __init__(
         self,
-        model_path: str = 'models/skillalign_matcher.keras',
-        preprocessor_path: str = 'preprocessors/nlp_preprocessor.pkl',
+        model_path: str = 'models/skillalign_matcher_v4.keras',
+        preprocessor_path: str = 'preprocessors/nlp_preprocessor_v4.pkl',
+        config_path: str = 'models/model_config_v4.json',
+        optimal_threshold: Optional[float] = None,
         use_hybrid: bool = True,
         hybrid_config: Optional[HybridScorerConfig] = None,
     ):
         self.model_path = model_path
         self.preprocessor_path = preprocessor_path
+        self.config_path = config_path
         self.use_hybrid = use_hybrid
         self.hybrid_scorer: Optional[HybridScorer] = None
         if use_hybrid:
@@ -90,21 +100,37 @@ class SkillAlignPredictor:
         self.preprocessor = None
         self.is_loaded = False
 
+        # Threshold resolution order:
+        # 1. explicit argument  2. env var  3. config JSON  4. default 0.44
+        if optimal_threshold is not None:
+            self.optimal_threshold = float(optimal_threshold)
+        else:
+            env_val = os.getenv('OPTIMAL_THRESHOLD')
+            self.optimal_threshold = float(env_val) if env_val else self.DEFAULT_OPTIMAL_THRESHOLD
+
     def load(self) -> 'SkillAlignPredictor':
-        """Load model dan preprocessor dari disk."""
-        # Load model
+        """Load model, preprocessor, dan config dari disk."""
+        # ── 1. Load model ──────────────────────────────────────────────────
         if not os.path.exists(self.model_path):
             raise FileNotFoundError(
-                f"Model tidak ditemukan: {self.model_path}"
+                f"Model tidak ditemukan: {self.model_path}\n"
+                f"Pastikan model v4 sudah di-download ke folder models/\n"
+                f"  atau set env MODEL_DOWNLOAD_URL dan restart service."
             )
 
         logger.info(f"Loading model dari: {self.model_path}")
 
+        # v4 menggunakan Huber loss (built-in) — hanya perlu CustomAttentionLayer.
+        # focal_loss disertakan untuk backward-compat jika ada legacy model v3.
         custom_objects = {
             'CustomAttentionLayer': CustomAttentionLayer,
-            'focal_loss': focal_loss(),
-            'loss': focal_loss(),
         }
+        try:
+            from src.models.custom_loss import focal_loss
+            custom_objects['focal_loss'] = focal_loss()
+            custom_objects['loss'] = focal_loss()
+        except Exception:
+            pass  # v4 tidak butuh focal_loss
 
         self.model = tf.keras.models.load_model(
             self.model_path,
@@ -112,22 +138,40 @@ class SkillAlignPredictor:
             compile=False,  # tidak perlu compile untuk inference
         )
 
-        # Load preprocessor
+        # ── 2. Load preprocessor ───────────────────────────────────────────
         if os.path.exists(self.preprocessor_path):
-            logger.info(
-                f"Loading preprocessor dari: {self.preprocessor_path}"
-            )
+            logger.info(f"Loading preprocessor dari: {self.preprocessor_path}")
             self.preprocessor = joblib.load(self.preprocessor_path)
         else:
             logger.warning(
-                f"Preprocessor tidak ditemukan: "
-                f"{self.preprocessor_path}. "
+                f"Preprocessor tidak ditemukan: {self.preprocessor_path}. "
                 f"Pastikan preprocessor tersedia sebelum predict."
             )
 
+        # ── 3. Load model config → auto-read OPTIMAL_THRESHOLD ────────────
+        if os.path.exists(self.config_path):
+            try:
+                with open(self.config_path, 'r') as f:
+                    config = json.load(f)
+                cfg_threshold = (
+                    config.get('evaluation_metrics', {}).get('optimal_threshold')
+                )
+                if cfg_threshold is not None and os.getenv('OPTIMAL_THRESHOLD') is None:
+                    # Config takes precedence only if env var not set explicitly
+                    self.optimal_threshold = float(cfg_threshold)
+                    logger.info(
+                        f"OPTIMAL_THRESHOLD={self.optimal_threshold:.2f} "
+                        f"(dari {self.config_path})"
+                    )
+            except Exception as e:
+                logger.warning(f"Gagal baca model config: {e}")
+
         self.is_loaded = True
         mode = "Hybrid" if self.use_hybrid else "Raw model"
-        logger.info(f"Model loaded successfully. Mode: {mode}")
+        logger.info(
+            f"Model loaded successfully. Mode: {mode} | "
+            f"OPTIMAL_THRESHOLD={self.optimal_threshold:.2f}"
+        )
         return self
 
     def predict(
@@ -179,8 +223,8 @@ class SkillAlignPredictor:
 
         inference_time = (time.time() - start_time) * 1000
 
-        confidence = self._get_confidence(final_score)
-        recommendation = self._get_recommendation(final_score)
+        confidence = self._get_confidence(final_score, self.optimal_threshold)
+        recommendation = self._get_recommendation(final_score, self.optimal_threshold)
 
         return PredictionResult(
             matching_score=round(final_score, 4),
@@ -236,8 +280,8 @@ class SkillAlignPredictor:
 
             results.append(PredictionResult(
                 matching_score=round(final_score, 4),
-                confidence=self._get_confidence(final_score),
-                recommendation=self._get_recommendation(final_score),
+                confidence=self._get_confidence(final_score, self.optimal_threshold),
+                recommendation=self._get_recommendation(final_score, self.optimal_threshold),
                 inference_time_ms=0.0,  # set later
                 raw_model_score=round(raw_score, 4),
                 structured_score=round(structured_score, 4) if structured_score is not None else None,
@@ -270,19 +314,37 @@ class SkillAlignPredictor:
         return paired[:top_n]
 
     @staticmethod
-    def _get_confidence(score: float) -> str:
-        if score > 0.7:
+    def _get_confidence(score: float, threshold: float = 0.44) -> str:
+        """
+        Klasifikasi confidence berdasarkan OPTIMAL_THRESHOLD terkalibrasi.
+
+        Tiers:
+          High   : score > threshold + 0.25  (jauh di atas threshold)
+          Medium : score > threshold          (di atas threshold)
+          Low    : score <= threshold         (di bawah threshold)
+        """
+        high_band = threshold + 0.25
+        if score > high_band:
             return "High"
-        elif score > 0.4:
+        elif score > threshold:
             return "Medium"
         else:
             return "Low"
 
     @staticmethod
-    def _get_recommendation(score: float) -> str:
-        if score > 0.7:
+    def _get_recommendation(score: float, threshold: float = 0.44) -> str:
+        """
+        Teks rekomendasi berdasarkan OPTIMAL_THRESHOLD terkalibrasi.
+
+        Tiers (sama dengan _get_confidence):
+          Highly Recommended : score > threshold + 0.25
+          Consider           : score > threshold
+          Not Recommended    : score <= threshold
+        """
+        high_band = threshold + 0.25
+        if score > high_band:
             return "Highly Recommended"
-        elif score > 0.4:
+        elif score > threshold:
             return "Consider"
         else:
             return "Not Recommended"

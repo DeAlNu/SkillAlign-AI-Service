@@ -21,8 +21,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from src.models.custom_layers import CustomAttentionLayer
-from src.models.custom_loss import focal_loss
 from src.inference.predict import SkillAlignPredictor
 from src.inference.api_service import (
     router as api_router,
@@ -75,30 +73,42 @@ async def lifespan(app: FastAPI):
     """
     global predictor
 
-    model_path = os.getenv(
-        'MODEL_PATH', 'models/skillalign_matcher_v2.keras'
-    )
-    preprocessor_path = os.getenv(
-        'PREPROCESSOR_PATH', 'preprocessors/nlp_preprocessor_v2.pkl'
-    )
+    model_path        = os.getenv('MODEL_PATH',        'models/skillalign_matcher_v4.keras')
+    preprocessor_path = os.getenv('PREPROCESSOR_PATH', 'preprocessors/nlp_preprocessor_v4.pkl')
+    config_path       = os.getenv('CONFIG_PATH',       'models/model_config_v4.json')
+    use_hybrid        = os.getenv('USE_HYBRID', 'true').lower() != 'false'
 
-    # Coba load model (jika tersedia)
+    # Coba download artifacts jika belum ada (untuk Railway deployment)
+    if not os.path.exists(model_path) or not os.path.exists(preprocessor_path):
+        try:
+            from scripts.download_models import ensure_models
+            logger.info("Model belum ada, mencoba download dari cloud storage...")
+            ensure_models()
+        except Exception as dl_err:
+            logger.warning(f"Model download gagal: {dl_err}")
+
+    # Load model
     try:
         predictor = SkillAlignPredictor(
             model_path=model_path,
-            preprocessor_path=preprocessor_path
+            preprocessor_path=preprocessor_path,
+            config_path=config_path,
+            use_hybrid=use_hybrid,
         )
         predictor.load()
         set_predictor(predictor)
-        logger.info("Model loaded successfully on startup.")
-    except FileNotFoundError:
+        logger.info(
+            f"✅ Model v4 loaded | threshold={predictor.optimal_threshold:.2f} | "
+            f"hybrid={'ON' if use_hybrid else 'OFF'}"
+        )
+    except FileNotFoundError as e:
         logger.warning(
-            "Model/preprocessor belum tersedia. "
-            "Service berjalan tanpa model. "
-            "Train dan save model terlebih dahulu."
+            f"⚠️  Model v4 belum tersedia: {e}\n"
+            f"   Service berjalan tanpa model. Set MODEL_DOWNLOAD_URL di env vars\n"
+            f"   dan restart, atau upload model ke folder models/ secara manual."
         )
     except Exception as e:
-        logger.error(f"Error loading model: {e}")
+        logger.error(f"❌ Error loading model v4: {e}", exc_info=True)
 
     yield  # Application runs
 
@@ -117,11 +127,15 @@ app = FastAPI(
         "- `POST /predict` — Single prediction (CV vs 1 Job)\n"
         "- `POST /api/v1/predict` — Single prediction (versioned)\n"
         "- `POST /api/v1/predict/batch` — Batch prediction (CV vs ≤50 Jobs)\n"
+        "- `POST /api/v1/recommend` — Ranking job postings untuk satu CV\n"
+        "- `POST /api/v1/skill-gap` — Analisis skill gap CV vs Job\n"
+        "- `POST /api/v1/analyze-cv` — Ekstraksi profil CV + saran job title\n"
         "- `GET /health` — Health check\n\n"
-        "**Model:** SkillAlign Matcher v2 (Dual-Input CNN + Custom Attention)\n"
+        "**Model:** SkillAlignMatcherV4 (Multi-Scale CNN + Cross-Attention, Regression)\n"
+        "**Threshold:** OPTIMAL_THRESHOLD=0.44 (dikalibrasi via F1-sweep pada val set)\n"
         "**Tim:** CC26-PSU318"
     ),
-    version="2.0.0",
+    version="4.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -193,24 +207,32 @@ async def root():
     """Root endpoint — API info."""
     return {
         "service": "SkillAlign AI Service",
-        "version": "2.0.0",
+        "version": "4.0.0",
         "status": "running",
-        "model": "skillalign_matcher_v2",
+        "model": "skillalign_matcher_v4",
+        "model_loaded": predictor is not None and predictor.is_loaded,
+        "optimal_threshold": predictor.optimal_threshold if predictor and predictor.is_loaded else 0.44,
         "endpoints": {
-            "single": "/predict  atau  /api/v1/predict",
-            "batch": "/api/v1/predict/batch",
-            "docs": "/docs",
-            "health": "/health"
+            "single":   "/predict  atau  /api/v1/predict",
+            "batch":    "/api/v1/predict/batch",
+            "recommend":"/api/v1/recommend",
+            "skill_gap":"/api/v1/skill-gap",
+            "analyze_cv":"/api/v1/analyze-cv",
+            "docs":     "/docs",
+            "health":   "/health"
         }
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint — dipakai Railway untuk startup probe."""
+    model_ok = predictor is not None and predictor.is_loaded
     return {
         "status": "healthy",
-        "model_loaded": predictor is not None and predictor.is_loaded
+        "model_loaded": model_ok,
+        "model_version": "v4",
+        "optimal_threshold": predictor.optimal_threshold if model_ok else None,
     }
 
 
