@@ -5,6 +5,7 @@
 
 # --- Core ML Framework ---
 tensorflow>=2.15.0
+keras>=3.13.0
 tensorboard>=2.15.0
 
 # --- Data Processing ---
