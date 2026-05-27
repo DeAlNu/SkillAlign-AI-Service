@@ -64,10 +64,8 @@ htmlcov/
 *.swo
 
 # ── Model Artifacts ──────────────────────────────────────────────────────
-# Model diunduh saat runtime via scripts/download_models.py
-# Set MODEL_DOWNLOAD_URL, PREPROCESSOR_DOWNLOAD_URL di env vars Cloud Run / Railway
-models/
-preprocessors/
+# Model di-bundle langsung ke image (v3 tersedia di repo)
+# models/ dan preprocessors/ SENGAJA tidak di-exclude agar ikut ke Docker image
 
 # ── Script Utility (non-produksi) ────────────────────────────────────────
 build_skill_vocabulary.py
