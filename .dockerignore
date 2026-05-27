@@ -1,32 +1,35 @@
-# ── Version Control ──────────────────────────────────────
+# ── Version Control ──────────────────────────────────────────────────────
 .git
 .gitignore
 
-# ── Documentation ────────────────────────────────────────
+# ── Documentation ────────────────────────────────────────────────────────
 README.md
 *.md
 LICENSE
 
-# ── Environment & Secrets ────────────────────────────────
+# ── Environment & Secrets ────────────────────────────────────────────────
 .env
+.env.local
 .env.*
-!.env.example          # (opsional: biarkan contoh masuk)
+!.env.example
 
-# ── Dataset & Data Mentah ────────────────────────────────
-# JANGAN masukkan data training ke image Docker!
+# ── Dataset & Data Mentah ────────────────────────────────────────────────
 Dataset/
 data/
+dataset/
 *.csv
 skill_db_relax_20.json
 token_dist.json
 
-# ── Notebooks & Experiments ──────────────────────────────
+# ── Notebooks & Experiments ──────────────────────────────────────────────
 notebooks/
 experiments/
 *.ipynb_checkpoints
 *.ipynb
+*.zip
+*.tar.gz
 
-# ── Build Artifacts Python ───────────────────────────────
+# ── Build Artifacts Python ───────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -34,37 +37,40 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.Python
+
+# ── Virtual environment ───────────────────────────────────────────────────
 venv/
 .venv/
 env/
 
-# ── Logs & Temp ──────────────────────────────────────────
+# ── Logs & Temp ──────────────────────────────────────────────────────────
 logs/
 tmp/
 *.log
 
-# ── Testing ──────────────────────────────────────────────
+# ── Testing ──────────────────────────────────────────────────────────────
 tests/
 test_*.py
 scratch_test.py
 .pytest_cache/
+.coverage
+htmlcov/
 
-# ── IDE & Editor ─────────────────────────────────────────
+# ── IDE & Editor ─────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# ── Script Utility (non-produksi) ────────────────────────
-build_skill_vocabulary.py
-supabase_schema.sql
-
-# ── API/Dev Tools ────────────────────────────────────────
-SkillAlign_AI_Service.postman_collection.json
-pyproject.toml         # pip sudah pakai requirements.txt
-
-# ── Model Artifacts ──────────────────────────────────────
+# ── Model Artifacts ──────────────────────────────────────────────────────
 # Model diunduh saat runtime via scripts/download_models.py
-# Lihat MODEL_DOWNLOAD_URL, PREPROCESSOR_DOWNLOAD_URL di .env
+# Set MODEL_DOWNLOAD_URL, PREPROCESSOR_DOWNLOAD_URL di env vars Cloud Run / Railway
 models/
 preprocessors/
+
+# ── Script Utility (non-produksi) ────────────────────────────────────────
+build_skill_vocabulary.py
+supabase_schema.sql
+SkillAlign_AI_Service.postman_collection.json
+pyproject.toml

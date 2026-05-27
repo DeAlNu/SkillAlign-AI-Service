@@ -27,10 +27,12 @@ COPY . .
 RUN mkdir -p models preprocessors logs
 
 # ── Expose port ────────────────────────────────────────────────────────────
-# Railway meng-override ini dengan $PORT env var via railway.toml startCommand
+# Cloud Run & Railway inject $PORT — default 8000 untuk local docker run
 EXPOSE 8000
 
 # ── Default start command ──────────────────────────────────────────────────
-# Digunakan saat run lokal: docker run -p 8000:8000 skillaign-ai
-# Railway menggunakan startCommand dari railway.toml (dengan $PORT)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Menggunakan sh -c agar $PORT env var bisa di-expand:
+#   - Cloud Run : PORT=8080 (inject otomatis)
+#   - Railway   : PORT=xxxx (inject via railway.toml / env var)
+#   - Local     : PORT tidak di-set → fallback ke 8000
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
