@@ -19,6 +19,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # en_core_web_lg (~800MB) dibutuhkan oleh SkillNer untuk /skill-gap & /extract-cv-skills
 RUN python -m spacy download en_core_web_lg
 
+# ── SentenceTransformer model ──────────────────────────────────────────────
+# all-MiniLM-L6-v2 (~90MB) dibutuhkan oleh semantic fallback di skill_gap.py
+# Di-pre-download ke image agar tidak download saat runtime (cold start Cloud Run)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 # ── Copy source code ───────────────────────────────────────────────────────
 COPY . .
 

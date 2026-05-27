@@ -6,83 +6,132 @@
 
 ## 📋 Overview
 
-SkillAlign adalah model Deep Learning untuk **CV-Job Matching** menggunakan NLP. Model menerima teks CV dan teks job description, lalu menghasilkan skor kecocokan (0.0–1.0). AI Service ini berperan sebagai *scoring engine* yang dikonsumsi oleh Backend (Express.js) dalam alur integrasi Two-Stage Retrieval.
+SkillAlign adalah AI Service berbasis **Deep Learning** untuk **CV-Job Matching**. Model menerima teks CV dan teks job description, lalu menghasilkan skor kecocokan (0.0–1.0). Service ini berperan sebagai *scoring engine* yang dikonsumsi oleh Backend (Express.js) dalam alur **Two-Stage Retrieval + Re-Ranking**.
 
 ### Fitur Utama
-- **Matching Score**: Skor kecocokan CV-Job (0.0–1.0)
-- **Batch Endpoint**: Scoring 1 CV terhadap hingga 50 job sekaligus
-- **Custom Attention Layer**: Cross-attention mechanism CV ↔ Job
-- **Focal Loss**: Penanganan class imbalance
-- **F1-Score Callback**: Early stopping berbasis F1-score
-- **REST API**: FastAPI service dengan Swagger UI otomatis
+
+| Fitur | Deskripsi |
+|---|---|
+| **CV-Job Matching** | Skor kecocokan 0.0–1.0 berbasis neural network |
+| **Batch Endpoint** | Scoring 1 CV terhadap hingga 50 job sekaligus |
+| **Skill Gap Analysis** | Deteksi skill yang dimiliki vs yang dibutuhkan job (SkillNer EMSI ~6k skills) |
+| **Analyze CV** | Ekstraksi profil kandidat + saran job title |
+| **Recommend Jobs** | Ranking job postings + industry skill readiness analysis |
+| **Learning Path** | Rekomendasi kursus Coursera/YouTube via Gemini + caching Supabase |
+| **HybridScorer** | Gabungan neural score + structured feature score |
 
 ---
 
-## 🏗️ Arsitektur Model (v2)
+## 🏗️ Arsitektur Model
+
+### Model v4 — SkillAlignMatcherV4 *(Latest, in notebook)*
 
 ```
-cv_input (300)    job_input (300)
-    │                  │
-    └──── Shared Embedding (15k vocab × 128 dim) ────┘
-         │                          │
-   CNN Branch CV             CNN Branch Job
-   Conv1D(128)→BN            Conv1D(128)→BN
-   Conv1D(64) →BN            Conv1D(64) →BN
-         │                          │
-         └──── Custom Attention ────┘
-                     │
-              GlobalMaxPool
-                     │
-              Dense(256)→Dense(128)→Dense(64)
-                     │
-              Sigmoid → matching_score (0–1)
+cv_input (300)                    job_input (300)
+      │                                  │
+      └──── Shared Embedding (15k vocab × 128 dim, pre-trained Word2Vec) ────┘
+                    │                              │
+         ┌──────────┼──────────┐       ┌──────────┼──────────┐
+    Conv1D(256)  Conv1D(256)  Conv1D(256)  (same 3 branches for job)
+    kernel=2     kernel=3     kernel=5
+    SpatialDropout1D(0.3) + L2(1e-4)
+         └──────────┼──────────┘
+              GlobalMaxPool1D × 3
+              Concat → 192-dim each branch
+              Total CV repr: 576-dim
+                    │
+         ┌──────────┴──────────┐
+      CV repr (576)      Job repr (576)
+         └── CustomAttentionLayer (cross-attention) ──┘
+                            │
+                     Dense(256) → Dense(128) → Dense(64)
+                            │
+                     Linear → matching_score (0.0–1.0)
 ```
+
+**Loss**: Huber Loss (δ=0.1) · **LR**: Cosine Annealing (η_max=1.374e-3, T_max=80)  
+**OPTIMAL_THRESHOLD**: 0.44 · **F1-Score**: 0.9036 · **Accuracy**: 88.65%
+
+**HybridScorer** (inference):
+```
+final_score = α × neural_score + (1 − α) × structured_score
+```
+- α = 0.40 jika structured_score tersedia, 0.15 jika tidak
+
+---
+
+### Model v3 — Deployed di Cloud Run *(Saat ini aktif)*
+
+Arsitektur sama dengan v2 (Dual-Input CNN + Custom Attention), dengan perbaikan **data synthesis**:
+- 5-mode pair synthesizer (vs 2-mode v2)
+- Soft continuous labels (regression, bukan binary)
+- Huber regression loss
+- Hard negative pairs: cross-domain, same-domain diff-role, seniority mismatch
+
+**Metrics v3** (regression):  
+Val MAE: 0.144 · Pseudo-Accuracy @0.5: 81.1%
 
 ---
 
 ## 📁 Struktur Proyek
 
 ```
-SkillAlign-AI/
+SkillAlign-AI-Service/
 ├── src/
-│   ├── models/
-│   │   ├── model_architecture.py      # Dual-Input CNN + Attention
-│   │   ├── custom_layers.py           # Custom Attention Layer
-│   │   ├── custom_loss.py             # Focal Loss
-│   │   └── custom_callbacks.py        # F1-Score Callback
-│   ├── preprocessing/
-│   │   ├── nlp_preprocessor.py        # Tokenizer + Lemmatizer
-│   │   ├── feature_engineering.py     # TF-IDF, skill matching
-│   │   └── embeddings.py              # Word2Vec manager
-│   ├── training/
-│   │   ├── train.py                   # Training pipeline
-│   │   ├── custom_training_loop.py    # tf.GradientTape
-│   │   └── hyperparameter_tuning.py   # Keras Tuner
+│   ├── database/
+│   │   └── supabase_client.py          # Singleton Supabase client + cache helpers
 │   ├── inference/
-│   │   ├── predict.py                 # SkillAlignPredictor class
-│   │   └── api_service.py             # FastAPI router (2 endpoints)
+│   │   ├── predict.py                  # SkillAlignPredictor + HybridScorer
+│   │   ├── api_service.py              # FastAPI router (predict, skill-gap, analyze-cv, recommend)
+│   │   ├── skill_gap.py                # SkillGapAnalyzer (SkillNer EMSI database)
+│   │   ├── learning_path_router.py     # Learning path endpoints (Gemini + YouTube)
+│   │   ├── course_finder.py            # CourseFinder via Gemini Search Grounding
+│   │   ├── cv_profile_extractor.py     # Ekstraksi profil CV (role, exp, education)
+│   │   ├── job_title_suggester.py      # Saran job title dari skill CV
+│   │   ├── industry_skill_analyzer.py  # Analisis kesiapan skill vs industri
+│   │   ├── hybrid_scorer.py            # HybridScorer (neural + structured)
+│   │   └── role_config.py              # Konfigurasi role & skill mapping
+│   ├── models/
+│   │   ├── model_architecture.py       # SkillAlignMatcherV4 (Multi-Scale CNN)
+│   │   ├── custom_layers.py            # CustomAttentionLayer
+│   │   ├── custom_loss.py              # Huber + auxiliary losses
+│   │   └── custom_callbacks.py         # F1-sweep callback, LR scheduler
+│   ├── preprocessing/
+│   │   ├── nlp_preprocessor.py         # Tokenizer + Lemmatizer
+│   │   ├── feature_engineering.py      # TF-IDF, structured features
+│   │   ├── embeddings.py               # Word2Vec manager
+│   │   └── pair_synthesizer.py         # 5-mode data synthesis
+│   ├── training/
+│   │   ├── train.py                    # Training pipeline
+│   │   ├── custom_training_loop.py     # tf.GradientTape demo
+│   │   └── hyperparameter_tuning.py    # Keras Tuner
 │   └── utils/
 │       ├── metrics.py
 │       ├── error_handling.py
 │       ├── validation.py
 │       └── visualization.py
-├── Dataset/                           # Raw dataset (LinkedIn US)
 ├── models/
-│   ├── skillalign_matcher_v2.keras    # Model utama (v2)
-│   └── model_config_v2.json
+│   ├── skillalign_matcher_v4.keras     # Model v4 — latest (local & Cloud Run next deploy)
+│   ├── model_config_v4.json
+│   ├── skillalign_matcher_v3.keras     # Model v3 — saat ini deployed di Cloud Run
+│   └── model_config_v3.json
 ├── preprocessors/
-│   ├── nlp_preprocessor_v2.pkl        # Tokenizer (vocab 15k)
-│   └── embedding_manager_v2.pkl       # Word2Vec (128-dim)
+│   ├── nlp_preprocessor_v4.pkl
+│   ├── embedding_manager_v4.pkl
+│   ├── nlp_preprocessor_v3.pkl
+│   └── embedding_manager_v3.pkl
 ├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_model_development.ipynb
-│   ├── 02U_model_development.ipynb    # Training pipeline v2 (gunakan ini)
-│   └── 03_hyperparameter_tuning.ipynb
-├── tests/
-│   ├── test_inference_csv.py          # Batch inference testing
-│   └── test_data/inference_test_cases.csv
-├── logs/                              # TensorBoard logs
-├── main.py                            # FastAPI entry point
+│   ├── 02U_model_development.ipynb     # Training pipeline v4 (Google Colab)
+│   └── plots_v4/                       # Visualisasi training v4 (CM, pred_vs_actual, dll)
+├── scripts/
+│   └── supabase_migrations.sql         # DDL untuk tabel skill_courses & learning_path_sessions
+├── logs/
+│   └── training_v4/                    # TensorBoard event files
+├── Dockerfile
+├── .dockerignore
+├── .env                                # Local env vars (di-gitignore)
+├── .env.example                        # Template env vars
+├── main.py                             # FastAPI entry point
 ├── requirements.txt
 └── README.md
 ```
@@ -97,10 +146,9 @@ SkillAlign-AI/
 ### 1. Virtual Environment
 
 ```bash
-# Masuk ke folder project
-cd SkillAlign-AI
+cd SkillAlign-AI-Service
 
-# Buat virtual environment
+# Buat virtual environment BARU (jangan copy dari project lain)
 python -m venv venv
 
 # Aktifkan (Windows)
@@ -113,88 +161,143 @@ source venv/bin/activate
 ### 2. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+# Windows — gunakan python -m pip, BUKAN pip langsung
+# (menghindari masalah launcher .exe jika venv pernah dipindah/dicopy)
+python -m pip install -r requirements.txt
+
+# Download spaCy model (~400MB, wajib untuk /skill-gap dan /extract-cv-skills)
+python -m spacy download en_core_web_lg
 ```
 
-### 3. Training Model (AI Engineer)
+### 3. Setup Environment Variables
 
-Jalankan notebook secara berurutan menggunakan kernel **SkillAlign-AI**:
+Buat file `.env` di root project (lihat `.env.example` sebagai template):
 
-```bash
-# Register kernel Jupyter
-python -m ipykernel install --user --name=venv --display-name="SkillAlign-AI"
+```env
+# Model (v3 = deployed, v4 = latest dari notebook)
+MODEL_PATH=models/skillalign_matcher_v3.keras
+PREPROCESSOR_PATH=preprocessors/nlp_preprocessor_v3.pkl
+CONFIG_PATH=models/model_config_v3.json
 
-# Buka Jupyter
-jupyter notebook
+# Gemini API (Google AI Studio — FREE tier cukup)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# YouTube Data API v3
+YOUTUBE_API_KEY=your_youtube_api_key_here
+
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
-Urutan notebook:
-1. `notebooks/01_eda.ipynb` — Exploratory Data Analysis
-2. `notebooks/02U_model_development.ipynb` — **Training pipeline v2** (gunakan ini)
-3. `notebooks/03_hyperparameter_tuning.ipynb` — Hyperparameter tuning (opsional)
+> ⚠️ **Jangan commit `.env` ke git.** File ini sudah di-gitignore.  
+> ⚠️ **GEMINI_API_KEY**: Gunakan key dari **Google AI Studio** (bukan GCP Vertex AI) agar tetap di FREE tier. Gemini 2.5 Flash **thinking tokens** dikenakan biaya — pastikan project GCP tidak terhubung ke billing account untuk penggunaan capstone.
 
-Hasil training akan tersimpan di:
-- `models/skillalign_matcher_v2.keras`
-- `preprocessors/nlp_preprocessor_v2.pkl`
-- `preprocessors/embedding_manager_v2.pkl`
+### 4. Setup Supabase Tables *(wajib untuk Learning Path)*
 
-### 4. Jalankan API Server
+Jalankan SQL berikut di **Supabase Dashboard → SQL Editor**:
+
+```sql
+-- Lihat file lengkap di: scripts/supabase_migrations.sql
+CREATE TABLE IF NOT EXISTS skill_courses ( ... );
+CREATE TABLE IF NOT EXISTS learning_path_sessions ( ... );
+```
+
+File lengkap ada di `scripts/supabase_migrations.sql`.
+
+### 5. Jalankan API Server
 
 ```bash
+# Windows — WAJIB gunakan python -m uvicorn, bukan uvicorn langsung
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# Linux/Mac — bisa pakai uvicorn langsung
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Server berhasil jika muncul log:
 ```
-INFO - Model loaded successfully on startup.
+INFO - ✅ Model v4 loaded | threshold=0.44 | hybrid=ON
 INFO - Application startup complete.
 ```
 
-> **Catatan**: Jika model belum ditraining, server tetap berjalan tapi endpoint `/predict` akan return HTTP 503.
+> **Catatan**: Jika model belum ada, server tetap berjalan tapi `/predict` return HTTP 503.
 
-### 5. Akses Swagger UI
+### 6. Akses Swagger UI
 
 Buka browser: **http://localhost:8000/docs**
 
 ---
 
+## 🐳 Docker & Deployment
+
+### Build & Run Lokal
+
+```bash
+docker build -t skillalign-ai .
+docker run -p 8000:8000 --env-file .env skillalign-ai
+```
+
+### Deploy ke Cloud Run (via Google Colab / gcloud CLI)
+
+```bash
+IMAGE="asia-southeast1-docker.pkg.dev/skillalign-496406/skillalign-repo/skillalign-ai:v3"
+
+# Build + push ke Artifact Registry (1 command)
+gcloud builds submit --tag $IMAGE .
+
+# Deploy ke Cloud Run
+gcloud run deploy skillaign-ai \
+  --image $IMAGE \
+  --region asia-southeast1 \
+  --memory 4Gi \
+  --cpu 2 \
+  --timeout 300 \
+  --min-instances 0 \
+  --max-instances 2 \
+  --set-env-vars "MODEL_PATH=models/skillalign_matcher_v3.keras" \
+  --set-env-vars "PREPROCESSOR_PATH=preprocessors/nlp_preprocessor_v3.pkl" \
+  --set-env-vars "CONFIG_PATH=models/model_config_v3.json" \
+  --set-env-vars "OPTIMAL_THRESHOLD=0.44" \
+  --set-env-vars "USE_HYBRID=true" \
+  --set-env-vars "GEMINI_API_KEY=..." \
+  --set-env-vars "YOUTUBE_API_KEY=..." \
+  --set-env-vars "SUPABASE_URL=..." \
+  --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=..." \
+  --allow-unauthenticated
+```
+
+> **Catatan Cloud Run**: `$PORT` di-inject otomatis (8080). Dockerfile sudah menggunakan `${PORT:-8000}` sehingga tidak perlu set manual.
+
+---
+
 ## 🧪 Testing API
 
-Ada **3 cara** untuk mengetes API setelah server berjalan:
+### Cara 1 — Swagger UI
+
+Buka **http://localhost:8000/docs** → klik endpoint → "Try it out" → isi body → "Execute".
 
 ---
 
-### Cara 1 — Swagger UI (Paling Mudah)
+### Cara 2 — curl
 
-1. Buka **http://localhost:8000/docs**
-2. Klik endpoint yang ingin ditest
-3. Klik **"Try it out"**
-4. Isi request body → klik **"Execute"**
-
----
-
-### Cara 2 — curl (Terminal)
-
-**Test health check:**
+**Health check:**
 ```bash
 curl http://localhost:8000/health
 ```
-Expected response:
 ```json
-{ "status": "healthy", "model_loaded": true }
+{ "status": "healthy", "model_loaded": true, "model_version": "v4", "optimal_threshold": 0.44 }
 ```
 
-**Test single prediction (`/predict`):**
+**Single prediction:**
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
-  -d "{
-    \"cv_text\": \"Experienced Data Scientist with 5 years in Python TensorFlow machine learning deep learning and statistical analysis. Deployed 10+ production models.\",
-    \"job_description\": \"Looking for a Data Scientist with strong Python skills, experience in ML frameworks TensorFlow and data analysis.\"
-  }"
+  -d '{
+    "cv_text": "Experienced Data Scientist with 5 years in Python TensorFlow machine learning deep learning. Deployed 10+ production models.",
+    "job_description": "Looking for a Data Scientist with Python skills, ML frameworks, and data analysis experience."
+  }'
 ```
-
-Expected response:
 ```json
 {
   "matching_score": 0.78,
@@ -203,169 +306,107 @@ Expected response:
 }
 ```
 
-**Test batch prediction (`/api/v1/predict/batch`):**
+**Batch prediction:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/predict/batch \
   -H "Content-Type: application/json" \
-  -d "{
-    \"cv_text\": \"Experienced Data Scientist with 5 years in Python TensorFlow machine learning.\",
-    \"job_descriptions\": [
-      \"Looking for a Data Scientist with Python and ML skills.\",
-      \"Marketing Manager needed for digital campaigns and SEO strategy.\",
-      \"Frontend Developer with React and JavaScript experience.\"
+  -d '{
+    "cv_text": "Data Scientist with 5 years in Python TensorFlow machine learning.",
+    "job_descriptions": [
+      "Data Scientist role requiring Python and ML skills.",
+      "Marketing Manager for digital campaigns and SEO.",
+      "Frontend Developer with React and JavaScript."
     ]
-  }"
+  }'
 ```
-
-Expected response — **sudah diurutkan dari skor tertinggi**, dilengkapi `rank` dan `job_index`:
 ```json
 {
   "results": [
-    {
-      "rank": 1,
-      "job_index": 0,
-      "matching_score": 0.78,
-      "confidence": "High",
-      "recommendation": "Highly Recommended",
-      "inference_time_ms": 51.2
-    },
-    {
-      "rank": 2,
-      "job_index": 2,
-      "matching_score": 0.31,
-      "confidence": "Low",
-      "recommendation": "Not Recommended",
-      "inference_time_ms": 48.7
-    },
-    {
-      "rank": 3,
-      "job_index": 1,
-      "matching_score": 0.25,
-      "confidence": "Low",
-      "recommendation": "Not Recommended",
-      "inference_time_ms": 49.1
-    }
+    { "rank": 1, "job_index": 0, "matching_score": 0.78, "confidence": "High", "recommendation": "Highly Recommended", "inference_time_ms": 51.2 },
+    { "rank": 2, "job_index": 2, "matching_score": 0.31, "confidence": "Low",  "recommendation": "Not Recommended",    "inference_time_ms": 48.7 },
+    { "rank": 3, "job_index": 1, "matching_score": 0.25, "confidence": "Low",  "recommendation": "Not Recommended",    "inference_time_ms": 49.1 }
   ],
   "total_items": 3,
   "total_time_ms": 312.4
 }
 ```
 
-> **Cara membaca response:**
-> - `rank` → peringkat kesesuaian (1 = paling cocok)
-> - `job_index` → posisi job di array input yang kamu kirim (0-based)
->
-> Pada contoh di atas: job ke-0 dari input mendapat rank 1, job ke-2 mendapat rank 2, dst.
-> Backend gunakan `job_index` untuk ambil data lengkap job (judul, perusahaan, dll.) dari database.
+> **Cara baca `job_index`**: posisi job di array input (0-based). Backend gunakan ini untuk lookup data lengkap job dari database.
 
----
-
-### Cara 3 — Script Testing CSV (Batch Evaluation)
-
-Untuk mengevaluasi model terhadap 40 test cases sekaligus:
-
+**Skill gap analysis:**
 ```bash
-# Dari folder SkillAlign-AI/
-cd tests
-python test_inference_csv.py
+curl -X POST http://localhost:8000/api/v1/skill-gap \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cv_text": "Data Analyst with 3 years experience. Skilled in SQL, Excel, and PowerBI. Basic Python knowledge.",
+    "job_description": "Data Scientist position requiring Python, machine learning, TensorFlow, and statistical modeling."
+  }'
 ```
-
-Hasil evaluasi tersimpan di: `tests/results/inference_test_results.csv`
-
----
-
-## 📊 Confidence & Recommendation Mapping
-
-| Score | Confidence | Recommendation |
-|---|---|---|
-| ≥ 0.70 | High | Highly Recommended |
-| 0.40 – 0.69 | Medium | Consider |
-| < 0.40 | Low | Not Recommended |
-
----
-
-## 📡 API Endpoints Summary
-
-| Method | Endpoint | Deskripsi | Use Case |
-|---|---|---|---|
-| GET | `/` | Service info | Cek status |
-| GET | `/health` | Health check + model status | Load balancer |
-| POST | `/predict` | Single CV vs 1 Job | Testing & demo |
-| POST | `/api/v1/predict` | Single CV vs 1 Job (versioned) | Testing & demo |
-| POST | `/api/v1/predict/batch` | 1 CV vs ≤50 Jobs | **Integrasi Backend (ranking)** |
-| POST | `/api/v1/skill-gap` | Analisis skill gap CV vs Job | **Rekomendasi skill** |
-
-### Request Schema
-
-**Single (`/predict` atau `/api/v1/predict`):**
 ```json
 {
-  "cv_text": "string (min 50 char, max 10.000 char)",
-  "job_description": "string (min 30 char, max 10.000 char)",
+  "skill_gap_score": 0.25,
+  "skill_coverage_percent": "25%",
+  "top_priority_skill": "machine learn",
+  "present_skills": [
+    { "skill": "python", "skill_id": "KS125LS6N7WP4S6SFTCK", "match_score": 1.0, "priority": 0 },
+    { "skill": "sql",    "skill_id": "KS440W865GC4VRBW6LJP", "match_score": 1.0, "priority": 0 }
+  ],
+  "missing_skills": [
+    { "skill": "machine learn", "skill_id": "KS1261Z68KSKR1X31KS3", "match_score": 0.0, "priority": 1 },
+    { "skill": "tensorflow",    "skill_id": "KS120B874P2P6BSVTU0F", "match_score": 0.0, "priority": 2 }
+  ],
+  "recommendation_summary": "Kesesuaian skill: 25% (perlu peningkatan). Prioritaskan mempelajari: machine learn, tensorflow.",
+  "analysis_time_ms": 6500.0
+}
+```
+
+> ⏱️ **Request pertama ~5–15 detik** (SkillNer loading model `en_core_web_lg` ~400MB ke memory). Request berikutnya ~500ms.
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Deskripsi | Butuh Model? |
+|---|---|---|---|
+| GET | `/` | Service info & status | — |
+| GET | `/health` | Health check | — |
+| POST | `/predict` | Single CV vs 1 Job | ✅ |
+| POST | `/api/v1/predict` | Single CV vs 1 Job (versioned) | ✅ |
+| POST | `/api/v1/predict/batch` | 1 CV vs ≤50 Jobs, diranking | ✅ |
+| POST | `/api/v1/skill-gap` | Analisis skill gap CV vs Job (SkillNer) | ❌ |
+| POST | `/api/v1/extract-cv-skills` | Ekstrak skill dari CV saja | ❌ |
+| POST | `/api/v1/analyze-cv` | Profil CV + saran job title | ❌ |
+| POST | `/api/v1/recommend` | Ranking job + industry skill analysis | ✅ |
+| POST | `/api/v1/learning-path/analyze` | Rencana belajar per skill (Gemini + YouTube) | ❌ |
+| POST | `/api/v1/learning-path/refresh` | Refresh cache kursus untuk skill tertentu | ❌ |
+| GET | `/api/v1/learning-path/courses/{skill}` | Ambil kursus dari cache Supabase | ❌ |
+
+---
+
+## 📊 Request / Response Schema
+
+### Single & Batch Predict
+
+**Request (single):**
+```json
+{
+  "cv_text": "string (min 50, max 10.000 char)",
+  "job_description": "string (min 30, max 10.000 char)",
   "user_id": "string (opsional)"
 }
 ```
 
-**Batch (`/api/v1/predict/batch`) — Request:**
+**Request (batch):**
 ```json
 {
-  "cv_text": "string (min 50 char, max 10.000 char)",
-  "job_descriptions": ["string", "string", "..."],
+  "cv_text": "string",
+  "job_descriptions": ["string", "..."],
   "user_id": "string (opsional)"
 }
 ```
 > Maksimum 50 job descriptions per request.
 
-**Batch — Response (diurutkan dari skor tertinggi):**
-```json
-{
-  "results": [
-    {
-      "rank": 1,           
-      "job_index": 2,      
-      "matching_score": 0.85,
-      "confidence": "High",
-      "recommendation": "Highly Recommended",
-      "inference_time_ms": 51.2
-    }
-  ],
-  "total_items": 3,
-  "total_time_ms": 312.4
-}
-```
-
-| Field | Tipe | Keterangan |
-|---|---|---|
-| `rank` | int | Peringkat kesesuaian (1 = terbaik) |
-| `job_index` | int | Posisi job di array input (0-based) — gunakan ini untuk lookup data job di Backend |
-| `matching_score` | float | Skor 0.0–1.0 |
-| `confidence` | string | High / Medium / Low |
-| `recommendation` | string | Highly Recommended / Consider / Not Recommended |
-| `inference_time_ms` | float | Waktu inferensi (ms) |
-
-**Contoh penggunaan `job_index` di Backend (Express.js):**
-```javascript
-const jobs = await db.query('SELECT * FROM jobs WHERE ... LIMIT 50');
-const jobDescriptions = jobs.map(j => j.description);
-
-const aiResponse = await axios.post('/api/v1/predict/batch', {
-  cv_text: cvText,
-  job_descriptions: jobDescriptions
-});
-
-// Gabungkan skor dengan data job asli menggunakan job_index
-const ranked = aiResponse.data.results.map(item => ({
-  rank:           item.rank,
-  job:            jobs[item.job_index],   // lookup ke data job asli
-  score:          item.matching_score,
-  recommendation: item.recommendation
-}));
-// ranked[0] = job terbaik untuk CV ini
-```
-
----
-
-### Skill Gap (`/api/v1/skill-gap`)
+### Skill Gap
 
 **Request:**
 ```json
@@ -375,69 +416,87 @@ const ranked = aiResponse.data.results.map(item => ({
 }
 ```
 
-**Response:**
-```json
-{
-  "skill_gap_score": 0.20,
-  "skill_coverage_percent": "20%",
-  "top_priority_skill": "tensorflow",
-  "present_skills": [
-    { "skill": "python", "weight": 0.45, "priority": 0 }
-  ],
-  "missing_skills": [
-    { "skill": "tensorflow", "weight": 0.38, "priority": 1 },
-    { "skill": "mlops",      "weight": 0.31, "priority": 2 },
-    { "skill": "docker",     "weight": 0.28, "priority": 3 }
-  ],
-  "recommendation_summary": "Kesesuaian skill: 20% (perlu peningkatan). Prioritaskan mempelajari: tensorflow, mlops, docker.",
-  "analysis_time_ms": 12.4
-}
-```
+**Response fields:**
 
-| Field | Keterangan |
-|---|---|
-| `skill_gap_score` | 0.0–1.0, skor kesesuaian skill |
-| `skill_coverage_percent` | Persentase skill requirement yang sudah terpenuhi |
-| `top_priority_skill` | Skill paling penting untuk dipelajari duluan |
-| `present_skills` | Skill yang sudah ada di CV sesuai requirement |
-| `missing_skills` | Skill yang kurang, diurutkan berdasarkan prioritas |
-| `recommendation_summary` | Ringkasan rekomendasi natural language |
+| Field | Tipe | Keterangan |
+|---|---|---|
+| `skill_gap_score` | float 0–1 | Skor kesesuaian skill |
+| `skill_coverage_percent` | string | Persentase skill requirement yang terpenuhi |
+| `top_priority_skill` | string | Skill paling penting untuk dipelajari |
+| `present_skills[]` | array | Skill yang ada di CV sesuai job requirement |
+| `missing_skills[]` | array | Skill yang kurang, urut by prioritas |
+| `present_skills[].skill_id` | string | EMSI canonical skill ID |
+| `present_skills[].match_score` | float | Confidence SkillNer (1.0 = exact match) |
+| `recommendation_summary` | string | Ringkasan rekomendasi bahasa natural |
+| `analysis_time_ms` | float | Waktu analisis (ms) |
 
-**Test curl:**
-```bash
-curl -X POST http://localhost:8000/api/v1/skill-gap \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"cv_text\": \"Data Analyst with 3 years experience. Skilled in SQL, Excel, and PowerBI. Basic Python knowledge for data cleaning and visualization.\",
-    \"job_description\": \"Data Scientist position requiring Python, machine learning, TensorFlow, statistical modeling, and A/B testing experience.\"
-  }"
+### Confidence & Recommendation Mapping
+
+| Score | Confidence | Recommendation |
+|---|---|---|
+| ≥ 0.70 | High | Highly Recommended |
+| 0.44 – 0.69 | Medium | Consider |
+| < 0.44 | Low | Not Recommended |
+
+> **Threshold = 0.44** dikalibrasi via F1-sweep pada validation set (v4).
 
 ---
 
-## 🔧 Environment Variables (Opsional)
+## 🔧 Environment Variables
 
-Untuk mengganti model path tanpa edit kode:
+| Variable | Wajib | Deskripsi |
+|---|---|---|
+| `MODEL_PATH` | ✅ | Path ke file `.keras` (default: `models/skillalign_matcher_v4.keras`) |
+| `PREPROCESSOR_PATH` | ✅ | Path ke file `.pkl` preprocessor |
+| `CONFIG_PATH` | — | Path ke `model_config_*.json` |
+| `OPTIMAL_THRESHOLD` | — | Threshold klasifikasi (default: 0.44) |
+| `USE_HYBRID` | — | Aktifkan HybridScorer (default: true) |
+| `GEMINI_API_KEY` | ✅* | Wajib untuk Learning Path endpoint |
+| `YOUTUBE_API_KEY` | ✅* | Wajib untuk Learning Path (YouTube resources) |
+| `SUPABASE_URL` | ✅* | Wajib untuk Learning Path caching |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅* | Wajib untuk Learning Path caching |
 
-```bash
-# Windows (PowerShell)
-$env:MODEL_PATH = "models/skillalign_matcher_v2.keras"
-$env:PREPROCESSOR_PATH = "preprocessors/nlp_preprocessor_v2.pkl"
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# Linux/Mac
-MODEL_PATH=models/skillalign_matcher_v2.keras \
-PREPROCESSOR_PATH=preprocessors/nlp_preprocessor_v2.pkl \
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
+> *Opsional jika tidak menggunakan endpoint Learning Path.
 
 ---
 
 ## 📊 TensorBoard
 
 ```bash
-tensorboard --logdir=logs/training
+tensorboard --logdir=logs/training_v4
 ```
 Buka browser: **http://localhost:6006**
+
+---
+
+## 📈 Performance Model
+
+### v4 — SkillAlignMatcherV4 *(Latest)*
+
+| Metric | Nilai |
+|---|---|
+| Accuracy (threshold=0.44) | **88.65%** |
+| F1-Score (threshold=0.44) | **0.9036** |
+| Precision | 0.8792 |
+| Recall | 0.9293 |
+| MAE (regression) | 0.1105 |
+| RMSE | 0.1783 |
+| Correlation | 0.772 |
+| Best Val MAE (epoch 70/80) | 0.10766 |
+| Optimal Threshold | **0.44** |
+| Inference Time (predict) | ~50ms |
+| Inference Time (skill-gap, cold) | ~5–15s |
+| Inference Time (skill-gap, warm) | ~500ms |
+
+### v3 — Deployed *(Cloud Run)*
+
+| Metric | Nilai |
+|---|---|
+| Val MAE | 0.144 |
+| Pseudo-Accuracy @threshold 0.5 | 81.1% |
+| Epochs | 32 |
+
+> **Catatan MAE**: Model v3 dan v4 menggunakan **regression** (continuous label 0.0–1.0, Huber Loss), bukan binary classification. MAE 0.144 berarti rata-rata prediksi meleset ~0.14 dari label. Untuk keputusan binary (cocok/tidak), gunakan threshold 0.44 yang dikalibrasi dari F1-sweep.
 
 ---
 
@@ -447,21 +506,10 @@ Buka browser: **http://localhost:6006**
 |---|---|
 | **Geografis** | Dataset LinkedIn US — kurang akurat untuk konteks Indonesia |
 | **Industri** | Dominasi IT, Healthcare, Finance — logistik/manufaktur kurang terwakili |
-| **Bahasa** | Bahasa Inggris saja — input Bahasa Indonesia → banyak OOV token |
-| **Skills** | Skill khusus Indonesia (SIO, K3, PPJK) tidak dikenali model |
-
----
-
-## 🎯 Performance Model v2
-
-| Metric | Target | Hasil (Internal Test) |
-|---|---|---|
-| Accuracy | ≥ 85% | **90.03%** ✅ |
-| F1-Score | ≥ 0.75 | **0.8972** ✅ |
-| AUC | — | **0.9678** |
-| Inference Time | < 500ms | **~50ms** ✅ |
-
-> **Catatan**: Internal test menggunakan data synthetic. Pass rate pada test cases logistik Indonesia lebih rendah karena domain mismatch (lihat Known Limitations).
+| **Bahasa** | Input Bahasa Inggris saja — input Bahasa Indonesia → banyak OOV token |
+| **Skill NER** | SkillNer terkadang truncate nama skill multi-kata (misal: "machine learning" → "machine learn") |
+| **Cold Start** | SkillNer butuh ~5–15s loading di request pertama |
+| **Gemini Billing** | Gemini 2.5 Flash thinking tokens dikenakan biaya jika GCP project terhubung billing |
 
 ---
 
