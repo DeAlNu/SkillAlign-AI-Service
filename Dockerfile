@@ -17,7 +17,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # ── spaCy language model ───────────────────────────────────────────────────
 # en_core_web_lg (~800MB) dibutuhkan oleh SkillNer untuk /skill-gap & /extract-cv-skills
-RUN python -m spacy download en_core_web_lg
+# Gunakan direct pip URL karena `python -m spacy download` pada spaCy 3.6.x
+# menghasilkan URL yang malformed (versi kosong → 404). Model 3.6.0 kompatibel dengan spaCy 3.6.x
+RUN pip install "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.6.0/en_core_web_lg-3.6.0-py3-none-any.whl"
 
 # ── SentenceTransformer model ──────────────────────────────────────────────
 # all-MiniLM-L6-v2 (~90MB) dibutuhkan oleh semantic fallback di skill_gap.py
