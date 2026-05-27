@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── Python dependencies ────────────────────────────────────────────────────
 # Salin requirements dulu agar layer ini di-cache jika kode berubah tapi deps tidak
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # ── spaCy language model ───────────────────────────────────────────────────
 # en_core_web_lg (~800MB) dibutuhkan oleh SkillNer untuk /skill-gap & /extract-cv-skills
