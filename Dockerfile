@@ -21,6 +21,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # menghasilkan URL yang malformed (versi kosong → 404). Model 3.6.0 kompatibel dengan spaCy 3.6.x
 RUN pip install "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.6.0/en_core_web_lg-3.6.0-py3-none-any.whl"
 
+# ── NLTK data ──────────────────────────────────────────────────────────────
+# wordnet, stopwords, punkt dibutuhkan oleh NLP preprocessor & SkillNer
+RUN python -c "import nltk; nltk.download('wordnet'); nltk.download('stopwords'); nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('omw-1.4'); nltk.download('averaged_perceptron_tagger'); nltk.download('averaged_perceptron_tagger_eng')"
+
 # ── SentenceTransformer model ──────────────────────────────────────────────
 # all-MiniLM-L6-v2 (~90MB) dibutuhkan oleh semantic fallback di skill_gap.py
 # Di-pre-download ke image agar tidak download saat runtime (cold start Cloud Run)

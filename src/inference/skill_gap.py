@@ -103,6 +103,7 @@ class SkillGapAnalyzer:
                     f"Jalankan: python -m spacy download {self.spacy_model}"
                 ) from e
             except ImportError as e:
+                logger.error(f"SkillNer ImportError detail: {e}")
                 raise RuntimeError(
                     "SkillNer atau spaCy tidak terinstall. "
                     "Jalankan: pip install skillNer spacy"
