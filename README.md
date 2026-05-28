@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://python.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-orange?logo=tensorflow)](https://tensorflow.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?logo=fastapi)](https://fastapi.tiangolo.com)
-[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-Jakarta-4285F4?logo=google-cloud)](https://cloud.google.com/run)
+[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-4285F4?logo=google-cloud)](https://cloud.google.com/run)
 
 ---
 
@@ -84,12 +84,19 @@ User Request → Backend (Express.js)
 
 ## 🌐 Live Service
 
-| Service | Region | URL |
-|---|---|---|
-| **Production (tim kita)** | asia-southeast2 (Jakarta) | `https://skillalign-ai-[hash].asia-southeast2.run.app` |
-| **Staging (Zahri)** | asia-southeast1 (Singapore) | `https://skillalign-ai-17692383128.asia-southeast1.run.app` |
+Service di-deploy di **Google Cloud Run** oleh masing-masing anggota tim. Setiap deployment berjalan secara mandiri dengan konfigurasi env vars sendiri.
 
-> Health check: `GET /health` — mengembalikan status model, versi, dan threshold.
+| Anggota | Region | Health Check |
+|---|---|---|
+| Destian | asia-southeast2 (Jakarta) | `GET <URL_DESTIAN>/health` |
+| Zahri | asia-southeast1 (Singapore) | `GET <URL_ZAHRI>/health` |
+
+> URL production masing-masing deployment bisa dilihat di Google Cloud Console → Cloud Run, atau via `gcloud run services describe skillalign-ai --region <region>`.
+
+Health check response:
+```json
+{ "status": "healthy", "model_loaded": true, "model_version": "v4", "optimal_threshold": 0.44 }
+```
 
 ---
 
@@ -445,19 +452,24 @@ Pastikan sudah login ke gcloud dan project di-set:
 
 ```bash
 gcloud auth login
-gcloud config set project skillalign-496406
+gcloud config set project YOUR_GCP_PROJECT_ID
 ```
 
 #### Step 1 — Build image via Cloud Build
 
+Ganti variabel sesuai konfigurasi GCP masing-masing:
+
 ```bash
-IMAGE="asia-southeast2-docker.pkg.dev/skillalign-496406/skillalign-repo/skillalign-ai:latest"
+PROJECT_ID="your-gcp-project-id"
+REGION="asia-southeast1"   # sesuaikan: asia-southeast1, asia-southeast2, dst.
+REPO="your-artifact-registry-repo"
+IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/skillalign-ai:latest"
 
 # Submit build ke Cloud Build (~15-20 menit build pertama, ~8-10 menit berikutnya)
 gcloud builds submit \
   --tag $IMAGE \
   --timeout=30m \
-  --project=skillalign-496406 \
+  --project=$PROJECT_ID \
   .
 ```
 
@@ -468,7 +480,7 @@ gcloud builds submit \
 ```bash
 gcloud run deploy skillalign-ai \
   --image $IMAGE \
-  --region asia-southeast2 \
+  --region $REGION \
   --memory 4Gi \
   --cpu 2 \
   --timeout 300 \
@@ -479,12 +491,12 @@ gcloud run deploy skillalign-ai \
   --set-env-vars "CONFIG_PATH=models/model_config_v4.json" \
   --set-env-vars "OPTIMAL_THRESHOLD=0.44" \
   --set-env-vars "USE_HYBRID=true" \
-  --set-env-vars "GEMINI_API_KEY=YOUR_KEY" \
-  --set-env-vars "YOUTUBE_API_KEY=YOUR_KEY" \
-  --set-env-vars "SUPABASE_URL=YOUR_URL" \
-  --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=YOUR_KEY" \
+  --set-env-vars "GEMINI_API_KEY=YOUR_GEMINI_KEY" \
+  --set-env-vars "YOUTUBE_API_KEY=YOUR_YOUTUBE_KEY" \
+  --set-env-vars "SUPABASE_URL=YOUR_SUPABASE_URL" \
+  --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_KEY" \
   --allow-unauthenticated \
-  --project skillalign-496406
+  --project $PROJECT_ID
 ```
 
 > `$PORT` di-inject otomatis oleh Cloud Run (8080). Dockerfile sudah menggunakan `${PORT:-8000}` sehingga tidak perlu set manual.
@@ -493,8 +505,8 @@ gcloud run deploy skillalign-ai \
 
 ```bash
 gcloud run services describe skillalign-ai \
-  --region asia-southeast2 \
-  --project skillalign-496406 \
+  --region $REGION \
+  --project $PROJECT_ID \
   --format "value(status.url)"
 ```
 
@@ -1139,8 +1151,8 @@ CREATE INDEX IF NOT EXISTS idx_lp_sessions_user_id ON learning_path_sessions(use
 
 | Nama | Role |
 |---|---|
-| **Destian Aldi Nugraha** | AI Engineer |
 | **Zahri Ramadhani** | AI Engineer |
+| **Destian Aldi Nugraha** | AI Engineer |
 
 **Capstone Project** — DBS Foundation Coding Camp 2026  
 **Tim ID**: CC26-PSU318
