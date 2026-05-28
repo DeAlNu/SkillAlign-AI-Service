@@ -1,13 +1,25 @@
 # SkillAlign AI Service
 
-> **CV-Job Matching Engine berbasis Deep Learning & NLP**  
-> Capstone Project — DBS Foundation Coding Camp 2026  
-> Tim ID: CC26-PSU318
+<div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://python.org)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-orange?logo=tensorflow)](https://tensorflow.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?logo=fastapi)](https://fastapi.tiangolo.com)
-[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-4285F4?logo=google-cloud)](https://cloud.google.com/run)
+**CV-Job Matching Engine berbasis Deep Learning & NLP**
+
+*Capstone Project — DBS Foundation Coding Camp 2026 · Tim CC26-PSU318*
+
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://python.org)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-FF6F00?logo=tensorflow&logoColor=white)](https://tensorflow.org)
+[![Keras](https://img.shields.io/badge/Keras-3.13-D00000?logo=keras&logoColor=white)](https://keras.io)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-Deployed-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/run)
+[![Supabase](https://img.shields.io/badge/Supabase-Cache-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+
+[![F1 Score](https://img.shields.io/badge/F1--Score-0.9036-brightgreen)](notebooks/plots_v4/threshold_calibration.png)
+[![Accuracy](https://img.shields.io/badge/Accuracy-88.65%25-brightgreen)](notebooks/plots_v4/cm_v4.png)
+[![Inference](https://img.shields.io/badge/Inference-~50ms-blue)](README.md)
+
+</div>
+
+---
 
 ---
 
@@ -25,6 +37,10 @@
 - [API Reference](#-api-reference)
 - [Contoh Request & Response](#-contoh-request--response)
 - [Performance Metrics](#-performance-metrics)
+  - [Training Curves](#training-curves)
+  - [Threshold Calibration](#threshold-calibration)
+  - [Score Distribution](#score-distribution)
+  - [Confusion Matrix](#confusion-matrix--prediction-quality)
 - [Training Pipeline](#-training-pipeline)
 - [Supabase Setup](#-supabase-setup)
 - [Known Limitations](#-known-limitations)
@@ -1031,6 +1047,47 @@ curl -X POST https://your-service-url.run.app/api/v1/learning-path/analyze \
 | Pearson Correlation | 0.772 |
 | Best Val MAE (epoch 70/80) | 0.10766 |
 | Optimal threshold | **0.44** |
+
+---
+
+### Training Curves
+
+> Huber Loss dan MAE konvergen stabil dalam 80 epoch tanpa overfitting — train/val loss berjalan berdekatan sepanjang training.
+
+![Training History v4](notebooks/plots_v4/training_history_v4.png)
+
+---
+
+### Threshold Calibration
+
+> Threshold 0.44 dipilih berdasarkan F1-sweep pada validation set — bukan hardcoded 0.5. Grafik menunjukkan titik F1 maksimum (garis biru vertikal) vs default 0.5 (garis kuning).
+
+![Threshold Calibration](notebooks/plots_v4/threshold_calibration.png)
+
+---
+
+### Score Distribution
+
+> Distribusi bimodal yang jelas antara pasangan "match" (hijau, skor tinggi) dan "tidak match" (merah, skor rendah) — bukti model belajar memisahkan kedua kelas dengan baik.
+
+![Score Distribution v4](notebooks/plots_v4/score_dist_v4.png)
+
+---
+
+### Confusion Matrix & Prediction Quality
+
+<div align="center">
+
+| Confusion Matrix (threshold=0.5) | Prediction vs Actual |
+|:---:|:---:|
+| ![Confusion Matrix v4](notebooks/plots_v4/cm_v4.png) | ![Pred vs Actual v4](notebooks/plots_v4/pred_vs_actual_v4.png) |
+
+</div>
+
+> **Confusion Matrix**: dari ~16.000 sampel test, false negative (829) jauh lebih sedikit dari true positive (8319) — model tidak banyak melewatkan kandidat yang seharusnya match.  
+> **Pred vs Actual**: titik-titik mengikuti garis diagonal (perfect prediction) dengan korelasi 0.772 — model belajar distribusi label kontinu, bukan sekadar klasifikasi binary.
+
+---
 
 ### Inference Time (Cloud Run, warm instance)
 
