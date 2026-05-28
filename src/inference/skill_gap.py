@@ -17,6 +17,7 @@ Dependency:
 """
 
 import logging
+import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
@@ -75,6 +76,7 @@ class SkillGapAnalyzer:
         self.semantic_threshold = semantic_threshold
         self._extractor = None
         self._encoder = None
+        self._extractor_lock = threading.Lock()  # Cegah concurrent spaCy load → segfault
 
     # ------------------------------------------------------------------
     # Lazy load SkillNer (berat, ~400MB model)
@@ -82,32 +84,38 @@ class SkillGapAnalyzer:
 
     @property
     def extractor(self):
-        """SkillNer extractor (lazy-loaded saat request pertama)."""
-        if self._extractor is None:
-            logger.info(f"Loading SkillNer with spaCy model: {self.spacy_model} ...")
-            try:
-                import spacy
-                from spacy.matcher import PhraseMatcher
-                from skillNer.general_params import SKILL_DB
-                from skillNer.skill_extractor_class import SkillExtractor
+        """SkillNer extractor (lazy-loaded, thread-safe via double-checked locking).
 
-                nlp = spacy.load(self.spacy_model)
-                self._extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
-                logger.info(
-                    f"SkillNer ready. EMSI skill database loaded "
-                    f"({len(SKILL_DB)} skills)."
-                )
-            except OSError as e:
-                raise RuntimeError(
-                    f"spaCy model '{self.spacy_model}' tidak ditemukan. "
-                    f"Jalankan: python -m spacy download {self.spacy_model}"
-                ) from e
-            except ImportError as e:
-                logger.error(f"SkillNer ImportError detail: {e}")
-                raise RuntimeError(
-                    "SkillNer atau spaCy tidak terinstall. "
-                    "Jalankan: pip install skillNer spacy"
-                ) from e
+        Dua thread yang load spaCy bersamaan menyebabkan segfault (Cython tidak thread-safe).
+        Lock memastikan hanya satu thread yang load; thread lain menunggu hingga selesai.
+        """
+        if self._extractor is None:
+            with self._extractor_lock:
+                if self._extractor is None:   # double-check setelah acquire lock
+                    logger.info(f"Loading SkillNer with spaCy model: {self.spacy_model} ...")
+                    try:
+                        import spacy
+                        from spacy.matcher import PhraseMatcher
+                        from skillNer.general_params import SKILL_DB
+                        from skillNer.skill_extractor_class import SkillExtractor
+
+                        nlp = spacy.load(self.spacy_model)
+                        self._extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
+                        logger.info(
+                            f"SkillNer ready. EMSI skill database loaded "
+                            f"({len(SKILL_DB)} skills)."
+                        )
+                    except OSError as e:
+                        raise RuntimeError(
+                            f"spaCy model '{self.spacy_model}' tidak ditemukan. "
+                            f"Jalankan: python -m spacy download {self.spacy_model}"
+                        ) from e
+                    except ImportError as e:
+                        logger.error(f"SkillNer ImportError detail: {e}")
+                        raise RuntimeError(
+                            "SkillNer atau spaCy tidak terinstall. "
+                            "Jalankan: pip install skillNer spacy"
+                        ) from e
         return self._extractor
 
     @property
