@@ -111,11 +111,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Error loading model v4: {e}", exc_info=True)
 
-    # Warmup SkillNer di background thread agar tidak blokir startup probe Cloud Run.
-    # spaCy en_core_web_lg + EMSI 31k skills ~23 detik — terlalu lama untuk blocking startup.
+    # Warmup SkillGapAnalyzer di background thread agar tidak blokir startup probe Cloud Run.
     import threading
-    threading.Thread(target=warmup_skill_gap, daemon=True, name="skillner-warmup").start()
-    logger.info("SkillNer warmup dimulai di background thread.")
+    threading.Thread(target=warmup_skill_gap, daemon=True, name="skillgap-warmup").start()
+    logger.info("SkillGapAnalyzer warmup dimulai di background thread.")
 
     yield  # Application runs
 

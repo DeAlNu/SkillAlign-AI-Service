@@ -5,7 +5,7 @@ Router terpisah yang bisa di-include ke main FastAPI app.
 Menyediakan endpoint:
   - /predict, /predict/batch   — single & batch CV-Job matching
   - /skill-gap                 — skill gap analysis
-  - /extract-cv-skills         — ekstraksi skill dari CV (SkillNer)
+  - /extract-cv-skills         — ekstraksi skill dari CV (CsvSkillExtractor)
   - /analyze-cv                — analisis CV: profil + suggested job titles  [NEW]
   - /recommend                 — ranking job postings berdasarkan CV + job title  [NEW]
 """
@@ -35,13 +35,12 @@ _industry_skill_analyzer = IndustrySkillAnalyzer()
 
 
 def warmup_skill_gap():
-    """Pre-load SkillNer + SentenceTransformer saat startup untuk menghindari
-    cold-start timeout pada request pertama (loading spaCy en_core_web_lg ~23 detik)."""
+    """Pre-load CsvSkillExtractor saat startup (opsional SBERT semantic fallback)."""
     try:
         _skill_gap_analyzer.warmup()
     except Exception as e:
         import logging
-        logging.getLogger(__name__).warning(f"SkillNer warmup gagal (non-fatal): {e}")
+        logging.getLogger(__name__).warning(f"SkillGapAnalyzer warmup gagal (non-fatal): {e}")
 
 
 # ==========================================
@@ -324,10 +323,10 @@ class SkillGapRequest(BaseModel):
 
 
 class SkillItemResponse(BaseModel):
-    """Satu skill yang terdeteksi oleh SkillNer dari EMSI database."""
-    skill: str = Field(..., description="Nama skill (dari EMSI skill database)")
-    skill_id: str = Field("", description="EMSI canonical skill ID")
-    match_score: float = Field(0.0, description="Confidence SkillNer (1.0=full match, <1=ngram match)")
+    """Satu skill yang terdeteksi oleh CsvSkillExtractor."""
+    skill: str = Field(..., description="Nama skill (dari job_skill_map.csv)")
+    skill_id: str = Field("", description="Skill ID (snake_case dari nama skill)")
+    match_score: float = Field(0.0, description="Confidence score (1.0=exact match via regex)")
     priority: int = Field(0, description="Urutan prioritas untuk missing skills (1=paling penting)")
 
 
@@ -453,10 +452,10 @@ class CvSkillExtractionRequest(BaseModel):
 
 
 class ExtractedSkillItem(BaseModel):
-    """Satu skill yang terdeteksi SkillNer dari teks CV."""
-    skill: str    = Field(..., description="Nama skill (lowercase, dari EMSI database)")
-    skill_id: str = Field(..., description="EMSI canonical skill ID")
-    confidence: float = Field(..., description="Confidence score (1.0=full match, <1=ngram)")
+    """Satu skill yang terdeteksi CsvSkillExtractor dari teks CV."""
+    skill: str    = Field(..., description="Nama skill (lowercase, dari job_skill_map.csv)")
+    skill_id: str = Field(..., description="Skill ID (snake_case dari nama skill)")
+    confidence: float = Field(..., description="Confidence score (1.0=exact regex match)")
 
 
 class CvSkillExtractionResponse(BaseModel):
@@ -476,7 +475,7 @@ class CvSkillExtractionResponse(BaseModel):
     response_model=CvSkillExtractionResponse,
     summary="Extract Skills from CV Text",
     description=(
-        "Ekstrak daftar skill dari teks CV menggunakan SkillNer (EMSI skill database). "
+        "Ekstrak daftar skill dari teks CV menggunakan CsvSkillExtractor (rule-based, ~3000+ skills). "
         "Digunakan oleh backend untuk candidate generation sebelum batch prediction — "
         "menghasilkan keyword yang jauh lebih akurat daripada frequency-based extraction. "
         "Tidak membutuhkan job description."
@@ -484,7 +483,7 @@ class CvSkillExtractionResponse(BaseModel):
 )
 async def extract_cv_skills(request: CvSkillExtractionRequest):
     """
-    Ekstrak skills dari CV text menggunakan SkillNer.
+    Ekstrak skills dari CV text menggunakan CsvSkillExtractor.
 
     Endpoint ini digunakan oleh backend Express.js sebagai Stage 1 dari
     2-stage recommendation pipeline:
@@ -492,7 +491,7 @@ async def extract_cv_skills(request: CvSkillExtractionRequest):
       2. Query DB dengan skill names sebagai keyword filter
       3. predict/batch → ranking job hasil filter
 
-    Returns skills yang terdeteksi SkillNer (EMSI database, 31k+ skills),
+    Returns skills yang terdeteksi dari job_skill_map.csv,
     diurutkan dari confidence tertinggi.
     """
     try:
