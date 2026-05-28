@@ -21,6 +21,8 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
+from src.inference.csv_skill_extractor import CsvSkillExtractor
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,56 +60,20 @@ class SkillGapAnalyzer:
 
     def __init__(
         self,
-        spacy_model: str = "en_core_web_lg",
-        ngram_threshold: float = 0.85,
         semantic_threshold: float = 0.72,
+        use_semantic_fallback: bool = False,
     ):
         """
         Args:
-            spacy_model:        spaCy model ('en_core_web_lg' akurat, 'en_core_web_sm' ringan).
-            ngram_threshold:    Confidence minimum SkillNer ngram match (0.85).
             semantic_threshold: Cosine similarity minimum untuk SBERT fallback matching.
                                 0.78 = tangkap sinonim dekat (cloud service ≈ cloud infra),
                                 tapi tolak yang jauh (microservices ≠ docker).
+            use_semantic_fallback: Menggunakan SentenceTransformer untuk pencocokan sinonim semantik.
         """
-        self.spacy_model = spacy_model
-        self.ngram_threshold = ngram_threshold
         self.semantic_threshold = semantic_threshold
-        self._extractor = None
+        self.use_semantic_fallback = use_semantic_fallback
         self._encoder = None
-
-    # ------------------------------------------------------------------
-    # Lazy load SkillNer (berat, ~400MB model)
-    # ------------------------------------------------------------------
-
-    @property
-    def extractor(self):
-        """SkillNer extractor (lazy-loaded saat request pertama)."""
-        if self._extractor is None:
-            logger.info(f"Loading SkillNer with spaCy model: {self.spacy_model} ...")
-            try:
-                import spacy
-                from spacy.matcher import PhraseMatcher
-                from skillNer.general_params import SKILL_DB
-                from skillNer.skill_extractor_class import SkillExtractor
-
-                nlp = spacy.load(self.spacy_model)
-                self._extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
-                logger.info(
-                    f"SkillNer ready. EMSI skill database loaded "
-                    f"({len(SKILL_DB)} skills)."
-                )
-            except OSError as e:
-                raise RuntimeError(
-                    f"spaCy model '{self.spacy_model}' tidak ditemukan. "
-                    f"Jalankan: python -m spacy download {self.spacy_model}"
-                ) from e
-            except ImportError as e:
-                raise RuntimeError(
-                    "SkillNer atau spaCy tidak terinstall. "
-                    "Jalankan: pip install skillNer spacy"
-                ) from e
-        return self._extractor
+        self.csv_extractor = CsvSkillExtractor()
 
     @property
     def encoder(self):
@@ -121,8 +87,9 @@ class SkillGapAnalyzer:
 
     def warmup(self):
         """Pre-load semua model saat startup (hindari cold start lag)."""
-        _ = self.extractor
-        _ = self.encoder
+        # Jangan panggil self.extractor agar tidak meload spaCy
+        if self.use_semantic_fallback:
+            _ = self.encoder
         logger.info("SkillGapAnalyzer warm-up complete.")
 
     def _semantic_fallback_batch(
@@ -171,7 +138,7 @@ class SkillGapAnalyzer:
 
     def _extract_skills(self, text: str) -> Dict[str, Tuple[str, float]]:
         """
-        Ekstrak skills dari teks menggunakan SkillNer.
+        Ekstrak skills dari teks menggunakan CsvSkillExtractor.
 
         Returns:
             Dict[skill_id, (skill_name, confidence)]
@@ -181,32 +148,13 @@ class SkillGapAnalyzer:
             return {}
 
         try:
-            annotations = self.extractor.annotate(text)
-            skills: Dict[str, Tuple[str, float]] = {}
-
-            # Full matches — exact match terhadap EMSI skill names
-            for match in annotations["results"]["full_matches"]:
-                sid   = match["skill_id"]
-                name  = match["doc_node_value"].lower().strip()
-                # Full match = confidence 1.0
-                if sid not in skills or skills[sid][1] < 1.0:
-                    skills[sid] = (name, 1.0)
-
-            # Ngram scored — partial/fuzzy matches
-            for match in annotations["results"]["ngram_scored"]:
-                confidence = match.get("score", 0.0)
-                if confidence < self.ngram_threshold:
-                    continue
-                sid  = match["skill_id"]
-                name = match["doc_node_value"].lower().strip()
-                if sid not in skills or skills[sid][1] < confidence:
-                    skills[sid] = (name, round(float(confidence), 4))
-
-            return skills
-
+            return self.csv_extractor.extract_skills(text)
         except Exception as e:
-            logger.error(f"SkillNer extraction error: {e}")
-            return {}
+            logger.error(
+                f"CSV skill extraction error ({type(e).__name__}): {e}",
+                exc_info=True,
+            )
+            raise
 
     # ------------------------------------------------------------------
     # Rekomendasi
@@ -292,19 +240,27 @@ class SkillGapAnalyzer:
         missing_rank = 1
 
         if still_missing:
-            batch_results = self._semantic_fallback_batch(still_missing, cv_skill_names)
-            for (skill_id, skill_name, confidence), (is_match, sim_score) in zip(
-                still_missing, batch_results
-            ):
-                if is_match:
-                    logger.info(
-                        f"Semantic fallback match: '{skill_name}' ≈ CV skill (sim={sim_score})"
-                    )
-                    present_skills.append(SkillItem(
-                        skill=skill_name, skill_id=skill_id,
-                        match_score=sim_score, priority=0
-                    ))
-                else:
+            if self.use_semantic_fallback:
+                batch_results = self._semantic_fallback_batch(still_missing, cv_skill_names)
+                for (skill_id, skill_name, confidence), (is_match, sim_score) in zip(
+                    still_missing, batch_results
+                ):
+                    if is_match:
+                        logger.info(
+                            f"Semantic fallback match: '{skill_name}' ≈ CV skill (sim={sim_score})"
+                        )
+                        present_skills.append(SkillItem(
+                            skill=skill_name, skill_id=skill_id,
+                            match_score=sim_score, priority=0
+                        ))
+                    else:
+                        missing_skills.append(SkillItem(
+                            skill=skill_name, skill_id=skill_id,
+                            match_score=0.0, priority=missing_rank
+                        ))
+                        missing_rank += 1
+            else:
+                for skill_id, skill_name, confidence in still_missing:
                     missing_skills.append(SkillItem(
                         skill=skill_name, skill_id=skill_id,
                         match_score=0.0, priority=missing_rank
