@@ -24,7 +24,8 @@ from pydantic import BaseModel, Field
 from src.inference.predict import SkillAlignPredictor
 from src.inference.api_service import (
     router as api_router,
-    set_predictor
+    set_predictor,
+    warmup_skill_gap,
 )
 from src.inference.learning_path_router import router as lp_router
 
@@ -109,6 +110,12 @@ async def lifespan(app: FastAPI):
         )
     except Exception as e:
         logger.error(f"❌ Error loading model v4: {e}", exc_info=True)
+
+    # Warmup SkillNer di background thread agar tidak blokir startup probe Cloud Run.
+    # spaCy en_core_web_lg + EMSI 31k skills ~23 detik — terlalu lama untuk blocking startup.
+    import threading
+    threading.Thread(target=warmup_skill_gap, daemon=True, name="skillner-warmup").start()
+    logger.info("SkillNer warmup dimulai di background thread.")
 
     yield  # Application runs
 

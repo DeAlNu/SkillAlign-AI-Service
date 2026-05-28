@@ -1,0 +1,53 @@
+{
+  "vocab_size": 15000,
+  "max_seq_len": 300,
+  "embedding_dim": 128,
+  "attention_units": 192,
+  "has_pretrained_embedding": true,
+  "trainable_embedding": true,
+  "architecture": "Multi-Scale Dual-Input CNN + Cross-Attention (v4)",
+  "version": "v4",
+  "l2_reg": 0.0001,
+  "spatial_dropout": 0.25,
+  "kernel_sizes": [
+    2,
+    3,
+    5
+  ],
+  "conv_filters": [
+    256,
+    64
+  ],
+  "fixes": [
+    "pair_synthesizer_with_5_modes",
+    "soft_continuous_labels",
+    "huber_regression_loss",
+    "cross_domain_negative_pairs",
+    "hard_negative_same_domain_diff_role",
+    "hard_negative_seniority_mismatch",
+    "multiscale_cnn_k2_k3_k5",
+    "spatial_dropout_after_embedding",
+    "l2_regularization_conv_dense",
+    "cosine_annealing_lr_schedule",
+    "threshold_calibration_sweep",
+    "bayesian_hp_tuning_applied"
+  ],
+  "training_summary": {
+    "total_epochs": 80,
+    "final_loss": 0.00444459542632103,
+    "final_mae": 0.07434455305337906,
+    "best_val_loss": 0.007671182509511709,
+    "best_val_mae": 0.10765596479177475
+  },
+  "evaluation_metrics": {
+    "mae": 0.11047955602407455,
+    "rmse": 0.17829242542555893,
+    "mse": 0.031788188964128494,
+    "pseudo_accuracy_at_0.5": 0.8808779389694847,
+    "pred_test_correlation": 0.7719454695543537,
+    "optimal_threshold": 0.44000000000000006,
+    "f1_at_optimal_threshold": 0.9035685823076242,
+    "v3_baseline_mae": 0.1187,
+    "v3_baseline_accuracy": 0.8681
+  }
+}

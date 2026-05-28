@@ -15,7 +15,10 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Logs & Data (Opsional)
-logs/
+# Ignore noisy/large sub-dirs, tapi biarkan training event files di-track
+logs/tuning/              # HP tuning checkpoints (besar, tidak perlu di-VCS)
+logs/gradient_tape_demo/  # Output demo GradientTape (generated saat run)
+logs/skillaign.log        # Runtime application log
 dataset/
 Dataset/
 

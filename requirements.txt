@@ -5,11 +5,12 @@
 
 # --- Core ML Framework ---
 tensorflow>=2.15.0
+keras>=3.13.0
 tensorboard>=2.15.0
 
 # --- Data Processing ---
-pandas>=2.1.0
-numpy>=1.24.0
+pandas>=2.1.0,<3.0.0
+numpy>=1.24.0,<2.0.0
 scikit-learn>=1.3.0
 
 # --- NLP Libraries ---
@@ -21,9 +22,10 @@ keybert>=0.8.0
 sentence-transformers>=2.2.0
 
 # --- Skill Named Entity Recognition (Skill Gap v5) ---
-# Setelah install, jalankan: python -m spacy download en_core_web_lg
-spacy>=3.0.0
-skillNer>=0.2.3
+# Model di-install via direct URL di Dockerfile (python -m spacy download buggy di 3.6.x)
+spacy>=3.5.0,<3.7.0
+skillNer==1.0.3
+ipython>=7.0.0  # skillNer 1.0.3 implicit dependency (tidak masuk ke package metadata)
 
 # --- API Framework (Side Quest) ---
 fastapi>=0.104.0

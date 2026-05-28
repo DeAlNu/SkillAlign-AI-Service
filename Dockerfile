@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -12,11 +12,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── Python dependencies ────────────────────────────────────────────────────
 # Salin requirements dulu agar layer ini di-cache jika kode berubah tapi deps tidak
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # ── spaCy language model ───────────────────────────────────────────────────
 # en_core_web_lg (~800MB) dibutuhkan oleh SkillNer untuk /skill-gap & /extract-cv-skills
-RUN python -m spacy download en_core_web_lg
+# Gunakan direct pip URL karena `python -m spacy download` pada spaCy 3.6.x
+# menghasilkan URL yang malformed (versi kosong → 404). Model 3.6.0 kompatibel dengan spaCy 3.6.x
+RUN pip install "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.6.0/en_core_web_lg-3.6.0-py3-none-any.whl"
+
+# ── NLTK data ──────────────────────────────────────────────────────────────
+# wordnet, stopwords, punkt dibutuhkan oleh NLP preprocessor & SkillNer
+RUN python -c "import nltk; nltk.download('wordnet'); nltk.download('stopwords'); nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('omw-1.4'); nltk.download('averaged_perceptron_tagger'); nltk.download('averaged_perceptron_tagger_eng')"
+
+# ── SentenceTransformer model ──────────────────────────────────────────────
+# all-MiniLM-L6-v2 (~90MB) dibutuhkan oleh semantic fallback di skill_gap.py
+# Di-pre-download ke image agar tidak download saat runtime (cold start Cloud Run)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # ── Copy source code ───────────────────────────────────────────────────────
 COPY . .
@@ -27,10 +39,12 @@ COPY . .
 RUN mkdir -p models preprocessors logs
 
 # ── Expose port ────────────────────────────────────────────────────────────
-# Railway meng-override ini dengan $PORT env var via railway.toml startCommand
+# Cloud Run & Railway inject $PORT — default 8000 untuk local docker run
 EXPOSE 8000
 
 # ── Default start command ──────────────────────────────────────────────────
-# Digunakan saat run lokal: docker run -p 8000:8000 skillaign-ai
-# Railway menggunakan startCommand dari railway.toml (dengan $PORT)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Menggunakan sh -c agar $PORT env var bisa di-expand:
+#   - Cloud Run : PORT=8080 (inject otomatis)
+#   - Railway   : PORT=xxxx (inject via railway.toml / env var)
+#   - Local     : PORT tidak di-set → fallback ke 8000
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
