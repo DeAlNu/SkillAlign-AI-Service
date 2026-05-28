@@ -34,6 +34,16 @@ _job_title_suggester     = JobTitleSuggester()
 _industry_skill_analyzer = IndustrySkillAnalyzer()
 
 
+def warmup_skill_gap():
+    """Pre-load SkillNer + SentenceTransformer saat startup untuk menghindari
+    cold-start timeout pada request pertama (loading spaCy en_core_web_lg ~23 detik)."""
+    try:
+        _skill_gap_analyzer.warmup()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"SkillNer warmup gagal (non-fatal): {e}")
+
+
 # ==========================================
 # Request / Response Schemas
 # ==========================================
