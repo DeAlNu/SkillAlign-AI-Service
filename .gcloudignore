@@ -1,0 +1,56 @@
+# .gcloudignore — hanya kirim file yang DIBUTUHKAN Docker ke Cloud Build
+# Referensi: https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+#
+# File ini di-include secara otomatis jika ada. Jika tidak ada,
+# gcloud fallback ke .gitignore. Dengan file ini kita bisa lebih ketat.
+
+# ── Ikut aturan .gitignore (virtual env, cache, dataset, dll) ─────────────
+#!include:.gitignore
+
+# ── Model lama (tidak dipakai di production) ──────────────────────────────
+models/best_model_v4.keras
+models/best_f1_model.keras
+models/best_model.keras
+models/skillalign_matcher.keras
+models/skillalign_matcher_tuned.keras
+models/skillalign_matcher_v2.keras
+models/skillalign_matcher_v3.keras
+models/saved_model/
+
+# ── Preprocessor lama (hanya butuh v4) ───────────────────────────────────
+preprocessors/embedding_manager_v2.pkl
+preprocessors/embedding_manager_v2.pkl.wv.vectors.npy
+preprocessors/embedding_manager_v2.pkl.syn1neg.npy
+preprocessors/embedding_manager_v3.pkl
+preprocessors/embedding_manager_v3.pkl.wv.vectors.npy
+preprocessors/embedding_manager_v3.pkl.syn1neg.npy
+preprocessors/nlp_preprocessor.pkl
+
+# ── Logs (tidak perlu di Docker) ──────────────────────────────────────────
+logs/
+
+# ── Notebooks (tidak perlu di runtime) ───────────────────────────────────
+notebooks/
+
+# ── Scripts training (tidak perlu di runtime) ─────────────────────────────
+scripts/train*.py
+scripts/download_models.py
+
+# ── Dataset (besar, tidak perlu di Docker) ───────────────────────────────
+dataset/
+Dataset/
+
+# ── Dev / local files ─────────────────────────────────────────────────────
+.env
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
