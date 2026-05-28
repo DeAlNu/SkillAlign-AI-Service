@@ -21,11 +21,8 @@ gensim>=4.3.0
 keybert>=0.8.0
 sentence-transformers>=2.2.0
 
-# --- Skill Named Entity Recognition (Skill Gap v5) ---
-# Model di-install via direct URL di Dockerfile (python -m spacy download buggy di 3.6.x)
-spacy>=3.5.0,<3.7.0
-skillNer==1.0.3
-ipython>=7.0.0  # skillNer 1.0.3 implicit dependency (tidak masuk ke package metadata)
+# --- Skill Extraction (Skill Gap v7 — CSV rule-based, no spaCy/SkillNer needed) ---
+# spaCy, skillNer, dan IPython dihapus — diganti CsvSkillExtractor (regex + CSV)
 
 # --- API Framework (Side Quest) ---
 fastapi>=0.104.0

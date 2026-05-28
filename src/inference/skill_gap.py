@@ -1,23 +1,19 @@
 """
-Skill Gap Analyzer v6 — SkillNer (EMSI Skill Database).
+Skill Gap Analyzer v7 — CSV Rule-Based (job_skill_map.csv).
 
-SkillNer menggunakan EMSI/Lightcast skill database (~6000 skills)
-yang mencakup berbagai industri: IT, healthcare, finance, logistics, dll.
+Menggunakan CsvSkillExtractor yang membaca job_skill_map.csv (~685 job types,
+4 skill columns: core, common, optional, soft) untuk ekstraksi skill.
 
-Keunggulan vs pendekatan sebelumnya:
-- Tidak perlu vocabulary manual atau CSV buatan sendiri
-- Tidak ada noise words ("development", "design", "engineer")
-- Mengenali skill multi-kata: "machine learning", "project management"
-- Matching berdasarkan skill_id EMSI → canonical, lintas variasi penulisan
-- Mencakup semua industri dalam database EMSI
+Keunggulan vs SkillNer:
+- Tidak ada dependency spaCy/SkillNer (~800MB lebih ringan)
+- Startup instan — tidak ada model loading
+- Sub-50ms per request (regex-based matching)
+- Tidak ada risiko segfault dari Cython concurrency
 
-Dependency:
-    pip install skillNer spacy
-    python -m spacy download en_core_web_lg
+Optional SBERT semantic fallback tersedia via use_semantic_fallback=True.
 """
 
 import logging
-import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
